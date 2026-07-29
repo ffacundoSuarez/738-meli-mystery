@@ -144,7 +144,8 @@ export async function adminCreatePostulante(
   pais: string,
   idioma: Lang = 'es',
   reclutador?: string,
-  isPrueba = false
+  isPrueba = false,
+  ola?: string
 ): Promise<PostulanteSummary> {
   const { data, error } = await supabase.rpc('meli_admin_create_postulante', {
     p_passcode: requireOpsPasscode(),
@@ -153,6 +154,7 @@ export async function adminCreatePostulante(
     p_idioma: idioma,
     p_reclutador: reclutador?.trim() || null,
     p_is_prueba: isPrueba,
+    p_ola: ola?.trim() || null,
   });
   if (error) throw error;
   return parsePostulante(data as Record<string, unknown>);

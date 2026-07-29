@@ -19,8 +19,35 @@ export function isMatrixAnswer(value: AnswerValue): value is Record<string, stri
   );
 }
 
+const NUMERIC_OPS = new Set(['gte', 'lte', 'gt', 'lt']);
+
+/** Parsea un valor como número finito; NaN/Infinity → null */
+function parseFiniteNumber(raw: unknown): number | null {
+  if (raw === undefined || raw === null || raw === '') return null;
+  const n = typeof raw === 'number' ? raw : Number(String(raw).trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Evalúa comparación numérica; false si algún lado no parsea */
+function evaluateNumeric(
+  operator: 'gte' | 'lte' | 'gt' | 'lt',
+  left: number,
+  right: number
+): boolean {
+  switch (operator) {
+    case 'gte':
+      return left >= right;
+    case 'lte':
+      return left <= right;
+    case 'gt':
+      return left > right;
+    case 'lt':
+      return left < right;
+  }
+}
+
 /** Evalúa una cláusula contra las respuestas actuales */
-function evaluateClause(
+export function evaluateClause(
   clause: ConditionClause,
   answers: Record<string, AnswerValue>
 ): boolean {
@@ -30,6 +57,14 @@ function evaluateClause(
 
   if (dependent === undefined || dependent === null || dependent === '') {
     return operator === 'notIn';
+  }
+
+  // Operadores numéricos: parsear ambos lados; si no parsean → false
+  if (NUMERIC_OPS.has(operator)) {
+    const left = parseFiniteNumber(dependent);
+    const right = parseFiniteNumber(values[0]);
+    if (left === null || right === null) return false;
+    return evaluateNumeric(operator as 'gte' | 'lte' | 'gt' | 'lt', left, right);
   }
 
   const matchValue = (v: string) => values.includes(v);
@@ -59,6 +94,26 @@ function evaluateClause(
     default:
       return false;
   }
+}
+
+/**
+ * Evalúa todas las preguntas con `computed` y mergea el resultado en answers
+ * para que viaje al jsonb (exports, dashboard) sin recalcular.
+ */
+export function applyComputedAnswers(
+  questions: Question[],
+  answers: Record<string, AnswerValue>
+): Record<string, AnswerValue> {
+  const next = { ...answers };
+  for (const q of questions) {
+    if (!q.computed) continue;
+    try {
+      next[q.id] = q.computed(next);
+    } catch {
+      // No bloquear el flujo si una fórmula falla; dejar sin valor
+    }
+  }
+  return next;
 }
 
 /** Evalúa una condición (legacy, AND u OR) */

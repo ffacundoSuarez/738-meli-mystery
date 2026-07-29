@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "smoke:logic": "node scripts/smoke-survey-logic.mjs",
+    "verify:fidelity": "npx tsx scripts/verificar-fidelidad.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

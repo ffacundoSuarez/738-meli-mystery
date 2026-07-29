@@ -67,6 +67,7 @@ export default function PostulantesPage() {
   const [pais, setPais] = useState('');
   const [idioma, setIdioma] = useState<Lang>('es');
   const [reclutador, setReclutador] = useState('');
+  const [ola, setOla] = useState('');
   const [isPrueba, setIsPrueba] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<SurveyResponse | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -118,6 +119,7 @@ export default function PostulantesPage() {
     setPais('');
     setIdioma('es');
     setReclutador('');
+    setOla('');
     setIsPrueba(false);
   };
 
@@ -137,7 +139,8 @@ export default function PostulantesPage() {
         pais,
         idioma,
         reclutador.trim() || undefined,
-        isPrueba
+        isPrueba,
+        ola.trim() || undefined
       );
       setPostulantes((prev) => [
         {
@@ -542,15 +545,24 @@ export default function PostulantesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="reclutador">Reclutador</Label>
-              <Input
-                id="reclutador"
-                value={reclutador}
-                onChange={(e) => setReclutador(e.target.value)}
-                placeholder="Nombre del reclutador"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="reclutador">Reclutador</Label>
+                <Input
+                  id="reclutador"
+                  value={reclutador}
+                  onChange={(e) => setReclutador(e.target.value)}
+                  placeholder="Nombre del reclutador"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ola">Ola</Label>
+                <Input
+                  id="ola"
+                  value={ola}
+                  onChange={(e) => setOla(e.target.value)}
+                  placeholder="Ej: 1Q 2026"
+                />
+              </div>
             <div className="flex items-start gap-3 rounded-lg border p-3">
               <Checkbox
                 id="is-prueba"

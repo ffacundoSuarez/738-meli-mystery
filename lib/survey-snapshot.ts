@@ -1,17 +1,14 @@
 import {
-  CANALES,
   CATEGORIAS,
-  MARCAS,
-  MARCA_OTRA_CODE,
+  CIUDADES,
+  COMPETIDORES,
   PAISES,
-  REGIONES,
+  ENTREGA_TIEMPO,
 } from './survey-config/constants';
 import { getSectionTitle, allStagesApproved, REVIEWABLE_SECTIONS } from './survey-config';
 import { AnswerValue, QuestionOption, StageStatus, StagesMap } from './types';
 
-// ⚠️ Este archivo lee las claves de screening del cuestionario.
-// Debe mantenerse en sintonía con lib/survey-config/constants.ts y con la
-// allowlist de meli_summary_answers() en supabase/migrations/0001_meli_schema.sql.
+// Claves alineadas con meli_summary_answers() (migración 0002) y constants.ts
 
 const STAGE_SHORT: Record<StageStatus, string> = {
   pendiente: 'Pendiente',
@@ -23,9 +20,15 @@ const STAGE_SHORT: Record<StageStatus, string> = {
 export interface ScreeningSnapshot {
   paisCode?: string;
   pais?: string;
-  region?: string;
-  marca?: string;
+  ciudad?: string;
+  competidor?: string;
   categoria?: string;
+  tipoEntrega?: string;
+  /** @deprecated alias de competidor para UI legacy */
+  marca?: string;
+  /** @deprecated */
+  region?: string;
+  /** @deprecated */
   canal?: string;
   hasScreening: boolean;
 }
@@ -34,48 +37,50 @@ function optionLabel(options: QuestionOption[], value: string): string | undefin
   return options.find((o) => o.value === value)?.label;
 }
 
-/** Resumen legible del módulo screening (F1–F5) desde answers */
+/** Resumen legible del screening (país, competidor, categoría, ciudad) */
 export function getScreeningSnapshot(
   answers: Record<string, AnswerValue> = {}
 ): ScreeningSnapshot {
   const paisCode = answers['f1-pais'] as string | undefined;
   const pais = paisCode ? optionLabel(PAISES, paisCode) : undefined;
 
-  const regionCode = answers['f2-region'] as string | undefined;
-  const region = regionCode
-    ? optionLabel(REGIONES, regionCode) ?? regionCode
+  const ciudadCode = answers['q10-ciudad'] as string | undefined;
+  const ciudad = ciudadCode
+    ? optionLabel(CIUDADES, ciudadCode) ?? ciudadCode
     : undefined;
 
-  const marcaCode = answers['f3-marca'] as string | undefined;
-  let marca: string | undefined;
-  if (marcaCode === MARCA_OTRA_CODE) {
-    marca = (answers['f3-marca-otra'] as string) || 'Otra';
-  } else if (marcaCode) {
-    marca = optionLabel(MARCAS, marcaCode);
+  const competidorCode = answers['q8-competidor'] as string | undefined;
+  const competidor = competidorCode
+    ? optionLabel(COMPETIDORES, competidorCode)
+    : undefined;
+
+  const categoriaCode = answers['q11-categoria'] as string | undefined;
+  let categoria: string | undefined;
+  if (categoriaCode === '19') {
+    categoria = (answers['q11-categoria-otra'] as string) || 'Otros (especificar)';
+  } else if (categoriaCode) {
+    categoria = optionLabel(CATEGORIAS, categoriaCode);
   }
 
-  const categoriaCode = answers['f4-categoria'] as string | undefined;
-  const categoria = categoriaCode ? optionLabel(CATEGORIAS, categoriaCode) : undefined;
-
-  const canalCode = answers['f5-canal'] as string | undefined;
-  const canal = canalCode ? optionLabel(CANALES, canalCode) : undefined;
+  const tipoCode = answers['q32-entrega-tiempo'] as string | undefined;
+  const tipoEntrega = tipoCode
+    ? optionLabel(ENTREGA_TIEMPO, tipoCode)
+    : undefined;
 
   return {
     paisCode,
     pais,
-    region,
-    marca,
+    ciudad,
+    competidor,
     categoria,
-    canal,
+    tipoEntrega,
+    marca: competidor,
+    region: ciudad,
+    canal: tipoEntrega,
     hasScreening: Boolean(paisCode),
   };
 }
 
-/**
- * True si la encuesta fue contestada en la primera etapa:
- * la primera parte revisable fue enviada (status distinto de pendiente).
- * Se usa para que las estadísticas no cuenten links generados sin responder.
- */
 export function hasAnsweredFirstStage(stages: StagesMap = {}): boolean {
   const first = REVIEWABLE_SECTIONS[0];
   if (!first) return false;
@@ -83,7 +88,6 @@ export function hasAnsweredFirstStage(stages: StagesMap = {}): boolean {
   return Boolean(status && status !== 'pendiente');
 }
 
-/** Texto corto de progreso por partes */
 export function getPartProgressLabel(stages: StagesMap = {}): string {
   if (allStagesApproved(stages)) return 'Encuesta completa';
 

@@ -145,7 +145,7 @@ export default function EstadisticasPage() {
     });
   }, [realResponses]);
 
-  /** Gráfico 3a: Hogares vs Negocios (filtro país). */
+  /** Gráfico 3a: categoría de producto (filtro país). */
   const byCategoria = useMemo(() => {
     return countByLabel(
       countryScoped.map((r) => getScreeningSnapshot(r.answers).categoria),
@@ -153,19 +153,19 @@ export default function EstadisticasPage() {
     );
   }, [countryScoped]);
 
-  /** Gráfico 3b: Telefónico vs Presencial (filtro país). */
-  const byCanal = useMemo(() => {
+  /** Gráfico 3b: tipo de entrega (filtro país). */
+  const byTipoEntrega = useMemo(() => {
     return countByLabel(
-      countryScoped.map((r) => getScreeningSnapshot(r.answers).canal),
-      'Sin canal'
+      countryScoped.map((r) => getScreeningSnapshot(r.answers).tipoEntrega),
+      'Sin dato'
     );
   }, [countryScoped]);
 
-  /** Por marca. */
-  const byMarca = useMemo(() => {
+  /** Por competidor. */
+  const byCompetidor = useMemo(() => {
     return countByLabel(
-      realResponses.map((r) => getScreeningSnapshot(r.answers).marca),
-      'Sin marca'
+      realResponses.map((r) => getScreeningSnapshot(r.answers).competidor),
+      'Sin competidor'
     );
   }, [realResponses]);
 
@@ -376,7 +376,7 @@ export default function EstadisticasPage() {
         <Card className="md:col-span-2">
           <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <CardTitle>Hogares / Negocios y Canal</CardTitle>
+              <CardTitle>Categoría y tipo de entrega</CardTitle>
               <CardDescription>
                 Vista general o filtrada por país — mostrando {countryLabel} (
                 {countryScoped.length} encuesta{countryScoped.length !== 1 ? 's' : ''})
@@ -400,7 +400,7 @@ export default function EstadisticasPage() {
             <div className="grid gap-6 md:grid-cols-2">
               <div>
                 <p className="text-sm font-medium mb-2 text-muted-foreground">
-                  Categoría (Hogares / Negocios)
+                  Categoría de producto
                 </p>
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -420,13 +420,13 @@ export default function EstadisticasPage() {
               </div>
               <div>
                 <p className="text-sm font-medium mb-2 text-muted-foreground">
-                  Canal (Telefónico / Presencial)
+                  Tipo de entrega
                 </p>
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={byCanal}>
+                    <BarChart data={byTipoEntrega}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                       <YAxis allowDecimals={false} />
                       <Tooltip
                     content={<ChartTooltip />}
@@ -445,13 +445,13 @@ export default function EstadisticasPage() {
         {/* Por marca */}
         <Card>
           <CardHeader>
-            <CardTitle>Por marca</CardTitle>
-            <CardDescription>Distribución de encuestas por marca evaluada</CardDescription>
+            <CardTitle>Por competidor</CardTitle>
+            <CardDescription>Distribución de encuestas por marketplace</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byMarca} layout="vertical">
+                <BarChart data={byCompetidor} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
                   <XAxis type="number" allowDecimals={false} />
                   <YAxis dataKey="name" type="category" width={110} />

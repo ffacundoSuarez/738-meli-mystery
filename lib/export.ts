@@ -54,7 +54,9 @@ function buildExportRows(responses: ExportRow[], options: BuildOptions = {}) {
         'Parte 1',
         'Parte 2',
         'Parte 3',
-        ...questions.map((q) => formatQuestionText(q.text)),
+        ...questions.map((q) =>
+          q.codigoOriginal ?? formatQuestionText(q.text)
+        ),
       ]
     : [
         'ID',
@@ -63,7 +65,9 @@ function buildExportRows(responses: ExportRow[], options: BuildOptions = {}) {
         'Empresa',
         'Ciudad',
         'Etapa alcanzada',
-        ...questions.map((q) => formatQuestionText(q.text)),
+        ...questions.map((q) =>
+          q.codigoOriginal ?? formatQuestionText(q.text)
+        ),
       ];
 
   const rows = responses.map((r) => {

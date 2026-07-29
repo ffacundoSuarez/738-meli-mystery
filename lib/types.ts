@@ -2,7 +2,15 @@
 
 export type Lang = 'es' | 'pt';
 
-export type ConditionOperator = 'eq' | 'neq' | 'in' | 'notIn';
+export type ConditionOperator =
+  | 'eq'
+  | 'neq'
+  | 'in'
+  | 'notIn'
+  | 'gte'
+  | 'lte'
+  | 'gt'
+  | 'lt';
 
 /** Una cláusula de condición sobre una respuesta previa */
 export interface ConditionClause {
@@ -39,6 +47,8 @@ export interface MatrixRow {
 
 export interface Question {
   id: string;
+  /** Código del documento MEGA (encabezado de columna en exports) */
+  codigoOriginal?: string;
   text: string;
   textPt?: string;
   type:
@@ -71,6 +81,8 @@ export interface Question {
   scaleMaxLabelPt?: string;
   matrixRows?: MatrixRow[];
   matrixColumns?: QuestionOption[];
+  /** Valor derivado; se mergea en answers antes de persistir */
+  computed?: (answers: Record<string, AnswerValue>) => AnswerValue;
 }
 
 /** Módulo visual dentro de una parte (fluye uno tras otro) */

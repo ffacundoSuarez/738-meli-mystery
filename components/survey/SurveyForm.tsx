@@ -20,8 +20,10 @@ import {
   getProgressiveQuestions,
   isModuleComplete,
   partHasAnswers,
+  applyComputedAnswers,
+  getAllQuestions,
 } from '@/lib/survey-logic';
-import { formatQuestionText, pick } from '@/lib/format';
+import { formatQuestionText, interpolate, pick } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
 import { AnswerValue, EvidenceFile, Lang, Question, ReviewFlagsMap, StageStatus, StagesMap, SurveyModule } from '@/lib/types';
 import { getResponseByToken, saveStageByToken, uploadEvidence } from '@/lib/data';
@@ -151,7 +153,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     (secId: string, source: Record<string, AnswerValue> = answers) => {
       const sec = surveySections.find((s) => s.id === secId);
       if (!sec) return {};
-      return getPartAnswers(sec, source);
+      // Merge computed before slicing so USD/días viajan al jsonb
+      const withComputed = applyComputedAnswers(getAllQuestions(surveySections), source);
+      return getPartAnswers(sec, withComputed);
     },
     [answers]
   );
@@ -253,7 +257,10 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
   }, [currentSection, loading]);
 
   const updateAnswer = (questionId: string, value: AnswerValue) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    setAnswers((prev) => {
+      const next = { ...prev, [questionId]: value };
+      return applyComputedAnswers(getAllQuestions(surveySections), next);
+    });
   };
 
   const handleEvidenceUpload = async (questionId: string, files: FileList | null) => {
@@ -494,7 +501,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
   };
 
   const renderQuestion = (question: Question) => {
-    const displayText = formatQuestionText(pick(question.text, question.textPt, lang));
+    const displayText = formatQuestionText(
+      interpolate(pick(question.text, question.textPt, lang), answers)
+    );
     const flag = reviewFlags[question.id];
     const reviewNote = flag?.corrected ? undefined : flag?.note;
     const hasReviewFlag = Boolean(reviewNote);
@@ -525,7 +534,7 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
 
         {question.hint && question.type !== 'info' && (
           <p className="text-sm text-muted-foreground">
-            {pick(question.hint, question.hintPt, lang)}
+            {interpolate(pick(question.hint, question.hintPt, lang), answers)}
           </p>
         )}
 

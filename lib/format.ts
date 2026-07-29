@@ -20,6 +20,26 @@ export function pick(es: string, pt: string | undefined, lang: 'es' | 'pt'): str
   return lang === 'pt' && pt ? pt : es;
 }
 
+/** ID de la pregunta competidor (piping [INSERTAR MARCA]) */
+export const COMPETIDOR_QUESTION_ID = 'q8-competidor';
+
+/**
+ * Reemplaza marcadores de piping en el enunciado.
+ * Hoy: [INSERTAR MARCA] ← etiqueta de la respuesta a 8. Competidor.
+ */
+export function interpolate(
+  text: string,
+  answers: Record<string, AnswerValue>
+): string {
+  if (!text.includes('[INSERTAR MARCA]')) return text;
+  const raw = answers[COMPETIDOR_QUESTION_ID];
+  const label =
+    raw !== undefined && raw !== null && raw !== ''
+      ? getAnswerLabel(COMPETIDOR_QUESTION_ID, raw)
+      : '';
+  return text.replaceAll('[INSERTAR MARCA]', label || '[INSERTAR MARCA]');
+}
+
 export function findQuestion(questionId: string): Question | undefined {
   return findQuestionInSections(surveySections, questionId);
 }

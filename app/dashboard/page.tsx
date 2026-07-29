@@ -4,8 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartTooltip,
-  CANAL_COLORS,
-  CATEGORIA_COLORS,
   PAIS_COLORS,
   STAGE_STACK_COLORS,
 } from '@/components/dashboard/ChartTooltip';
@@ -138,30 +136,38 @@ export default function DashboardPage() {
     };
   }, [realResponses, answeredResponses]);
 
-  /** País × Categoría (Hogares / Negocios) — barras agrupadas */
+  /** País × Competidor — barras agrupadas */
+  const paisCompetidor = useMemo(
+    () =>
+      crossCount(
+        answeredResponses,
+        (r) => getScreeningSnapshot(r.answers).pais,
+        (r) => getScreeningSnapshot(r.answers).competidor,
+        { rowFallback: 'Sin país', seriesFallback: 'Sin competidor' }
+      ),
+    [answeredResponses]
+  );
+
+  /** País × Categoría de producto — barras agrupadas */
   const paisCategoria = useMemo(
     () =>
       crossCount(
         answeredResponses,
         (r) => getScreeningSnapshot(r.answers).pais,
         (r) => getScreeningSnapshot(r.answers).categoria,
-        { rowFallback: 'Sin país', seriesFallback: 'Sin categoría', seriesOrder: ['Hogares', 'Negocios'] }
+        { rowFallback: 'Sin país', seriesFallback: 'Sin categoría' }
       ),
     [answeredResponses]
   );
 
-  /** País × Canal (Telefónico / Presencial) — barras agrupadas */
-  const paisCanal = useMemo(
+  /** País × Tipo de entrega (pregunta 32) — barras agrupadas */
+  const paisTipoEntrega = useMemo(
     () =>
       crossCount(
         answeredResponses,
         (r) => getScreeningSnapshot(r.answers).pais,
-        (r) => getScreeningSnapshot(r.answers).canal,
-        {
-          rowFallback: 'Sin país',
-          seriesFallback: 'Sin canal',
-          seriesOrder: ['Telefónico', 'Presencial'],
-        }
+        (r) => getScreeningSnapshot(r.answers).tipoEntrega,
+        { rowFallback: 'Sin país', seriesFallback: 'Sin dato' }
       ),
     [answeredResponses]
   );
@@ -196,30 +202,14 @@ export default function DashboardPage() {
       .map(({ total: _t, ...rest }) => rest);
   }, [answeredResponses]);
 
-  /** Categoría × Canal — barras agrupadas */
-  const categoriaCanal = useMemo(
+  /** Competidor × País — barras apiladas */
+  const competidorPais = useMemo(
     () =>
       crossCount(
         answeredResponses,
-        (r) => getScreeningSnapshot(r.answers).categoria,
-        (r) => getScreeningSnapshot(r.answers).canal,
-        {
-          rowFallback: 'Sin categoría',
-          seriesFallback: 'Sin canal',
-          seriesOrder: ['Telefónico', 'Presencial'],
-        }
-      ),
-    [answeredResponses]
-  );
-
-  /** Marca × País — barras apiladas; seriesKeys = países presentes */
-  const marcaPais = useMemo(
-    () =>
-      crossCount(
-        answeredResponses,
-        (r) => getScreeningSnapshot(r.answers).marca,
+        (r) => getScreeningSnapshot(r.answers).competidor,
         (r) => getScreeningSnapshot(r.answers).pais,
-        { rowFallback: 'Sin marca', seriesFallback: 'Sin país' }
+        { rowFallback: 'Sin competidor', seriesFallback: 'Sin país' }
       ),
     [answeredResponses]
   );
@@ -298,16 +288,50 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-lg font-semibold">Cruces</h2>
         <p className="text-sm text-muted-foreground">
-          Métricas combinadas por país, categoría y canal — solo encuestas contestadas (Parte 1 enviada)
+          País, competidor, categoría y tipo de entrega — solo encuestas contestadas (Parte 1 enviada)
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* País × Categoría */}
+        <Card>
+          <CardHeader>
+            <CardTitle>País × Competidor</CardTitle>
+            <CardDescription>Marketplace evaluado por país</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={paisCompetidor.rows}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip
+                    content={<ChartTooltip />}
+                    cursor={{ fill: 'rgba(15,23,42,0.05)' }}
+                    wrapperStyle={{ outline: 'none' }}
+                  />
+                  <Legend />
+                  {paisCompetidor.seriesKeys.map((key, i) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      name={key}
+                      fill={
+                        ['#FFE600', '#3483FA', '#00A650', '#F23D4F', '#64748b'][i % 5]
+                      }
+                      radius={[4, 4, 0, 0]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>País × Categoría</CardTitle>
-            <CardDescription>Hogares y negocios por país</CardDescription>
+            <CardDescription>Categoría de producto por país</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -322,62 +346,25 @@ export default function DashboardPage() {
                     wrapperStyle={{ outline: 'none' }}
                   />
                   <Legend />
-                  <Bar
-                    dataKey="Hogares"
-                    name="Hogares"
-                    fill={CATEGORIA_COLORS.Hogares}
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="Negocios"
-                    name="Negocios"
-                    fill={CATEGORIA_COLORS.Negocios}
-                    radius={[4, 4, 0, 0]}
-                  />
+                  {paisCategoria.seriesKeys.slice(0, 8).map((key, i) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      name={key.length > 24 ? `${key.slice(0, 22)}…` : key}
+                      fill={
+                        ['#3483FA', '#00A650', '#F23D4F', '#FFE600', '#a855f7', '#06b6d4', '#f59e0b', '#64748b'][
+                          i % 8
+                        ]
+                      }
+                      radius={[4, 4, 0, 0]}
+                    />
+                  ))}
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* País × Canal */}
-        <Card>
-          <CardHeader>
-            <CardTitle>País × Canal</CardTitle>
-            <CardDescription>Telefónico y presencial por país</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={paisCanal.rows}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip
-                    content={<ChartTooltip />}
-                    cursor={{ fill: 'rgba(15,23,42,0.05)' }}
-                    wrapperStyle={{ outline: 'none' }}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey="Telefónico"
-                    name="Telefónico"
-                    fill={CANAL_COLORS.Telefónico}
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="Presencial"
-                    name="Presencial"
-                    fill={CANAL_COLORS.Presencial}
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* País × Estado de etapas */}
         <Card>
           <CardHeader>
             <CardTitle>País × Estado de etapas</CardTitle>
@@ -423,55 +410,17 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Categoría × Canal */}
         <Card>
           <CardHeader>
-            <CardTitle>Categoría × Canal</CardTitle>
+            <CardTitle>País × Tipo de entrega</CardTitle>
             <CardDescription>
-              Telefónico / presencial dentro de hogares y negocios
+              Tarde / A tiempo / Temprano / Nunca llegó / Cancelado
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoriaCanal.rows}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip
-                    content={<ChartTooltip />}
-                    cursor={{ fill: 'rgba(15,23,42,0.05)' }}
-                    wrapperStyle={{ outline: 'none' }}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey="Telefónico"
-                    name="Telefónico"
-                    fill={CANAL_COLORS.Telefónico}
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="Presencial"
-                    name="Presencial"
-                    fill={CANAL_COLORS.Presencial}
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Marca × País (ancho completo) */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Marca × País</CardTitle>
-            <CardDescription>Distribución de marcas por país</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[340px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={marcaPais.rows}>
+                <BarChart data={paisTipoEntrega.rows}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} />
@@ -481,7 +430,42 @@ export default function DashboardPage() {
                     wrapperStyle={{ outline: 'none' }}
                   />
                   <Legend />
-                  {marcaPais.seriesKeys.map((pais, i) => (
+                  {paisTipoEntrega.seriesKeys.map((key, i) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      name={key.length > 28 ? `${key.slice(0, 26)}…` : key}
+                      fill={
+                        ['#F23D4F', '#00A650', '#3483FA', '#64748b', '#f59e0b'][i % 5]
+                      }
+                      radius={[4, 4, 0, 0]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Competidor × País</CardTitle>
+            <CardDescription>Distribución de competidores por país</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[340px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={competidorPais.rows}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip
+                    content={<ChartTooltip />}
+                    cursor={{ fill: 'rgba(15,23,42,0.05)' }}
+                    wrapperStyle={{ outline: 'none' }}
+                  />
+                  <Legend />
+                  {competidorPais.seriesKeys.map((pais, i) => (
                     <Bar
                       key={pais}
                       dataKey={pais}
@@ -489,7 +473,9 @@ export default function DashboardPage() {
                       stackId="a"
                       fill={colorForPais(pais, i)}
                       radius={
-                        i === marcaPais.seriesKeys.length - 1 ? [4, 4, 0, 0] : undefined
+                        i === competidorPais.seriesKeys.length - 1
+                          ? [4, 4, 0, 0]
+                          : undefined
                       }
                     />
                   ))}
