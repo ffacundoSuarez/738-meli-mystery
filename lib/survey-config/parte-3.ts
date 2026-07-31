@@ -11,23 +11,93 @@ import {
 } from './constants';
 import { naturalDaysBetween, usdFrom } from './computed';
 
-// Parte 3: entrega
-// Textos literales del .docx (fidelidad textual). P70–P72 fuera.
+// Parte 3 — cuestionario v2 (fidelidad textual). P70–P72 fuera.
 
 export const parte3: SurveySection = {
   id: 'parte-3',
   title: 'Parte 3 — Entrega',
-  description: 'Recepción del paquete, transportadora y documentación.',
+  description: 'Cancelaciones, recepción del paquete, transportadora y documentación.',
   modules: [
+    {
+      id: 'compras-no-entregadas',
+      title: 'COMPRAS NO ENTREGADAS O CANCELADAS (NUEVO)',
+      questions: [
+        {
+          id: 'q-cn-entregada',
+          codigoOriginal: 'CN-entregada',
+          text: '¿La compra fue entregada?',
+          type: 'single',
+          options: SI_NO_COD,
+          required: true,
+        },
+        {
+          id: 'q-cn-informado-cancelacion',
+          codigoOriginal: 'CN-cancelada',
+          text: '¿Fue informado que su compra fue cancelada?',
+          type: 'single',
+          options: SI_NO_COD,
+          // Solo si NO fue entregada; con Sí el bloque de cancelación se corta
+          showIf: eq('q-cn-entregada', '2'),
+          required: true,
+        },
+        {
+          id: 'q-cn-fecha-cancelacion',
+          codigoOriginal: 'CN-fecha',
+          text: 'Cuál fue la fecha de cancelación de la compra?(si fue informado)',
+          type: 'date',
+          showIf: {
+            all: [
+              eq('q-cn-entregada', '2'),
+              eq('q-cn-informado-cancelacion', '1'),
+            ],
+          },
+          required: true,
+        },
+        {
+          id: 'q-cn-motivo',
+          codigoOriginal: 'CN-motivo',
+          text: '¿Cuál fue el motivo que le informaron ?',
+          type: 'text',
+          showIf: {
+            all: [
+              eq('q-cn-entregada', '2'),
+              eq('q-cn-informado-cancelacion', '1'),
+            ],
+          },
+          required: true,
+        },
+        {
+          id: 'q-cn-reembolso-dias',
+          codigoOriginal: 'CN-reembolso',
+          text: '¿Cuánto tardó el reembolso?',
+          type: 'number',
+          showIf: {
+            all: [
+              eq('q-cn-entregada', '2'),
+              eq('q-cn-informado-cancelacion', '1'),
+            ],
+          },
+          required: true,
+          hint: 'Cantidad de días naturales',
+        },
+      ],
+    },
     {
       id: 'entrega',
       title: 'ENTREGA',
       questions: [
         {
-          id: 'q33-fecha-recepcion',
+          id: 'q32-fecha-recepcion',
+          codigoOriginal: '32',
+          text: '32. ¿Cuál es la fecha final de recepción del producto?',
+          type: 'date',
+          required: true,
+        },
+        {
+          id: 'q33-hora-recepcion',
           codigoOriginal: '33',
-          text: '33. ¿Cuál es la fecha final de recepción del producto?',
-          type: 'datetime',
+          text: '33. ¿Cuál es la hora de recepción del producto?',
+          type: 'time',
           required: true,
         },
         {
@@ -38,66 +108,67 @@ export const parte3: SurveySection = {
           required: false,
         },
         {
-          id: 'q32-entrega-tiempo',
-          codigoOriginal: '32',
-          text: '32. ¿El producto se entregó a tiempo?',
+          id: 'q34-entrega-tiempo',
+          codigoOriginal: '34',
+          text: '34. ¿El producto se entregó a tiempo?',
           type: 'single',
           options: ENTREGA_TIEMPO,
           required: true,
           hint: 'Si el producto tarda 10 días más que su promesa de entrega, dar el caso por cerrado y seleccionar la respuesta "Nunca llegó”',
         },
         {
-          id: 'q32q4-notif-entrega',
-          codigoOriginal: '32Q4.23.a',
-          text: '32Q4.23.a ¿Recibió una notificación por la entrega del producto?',
+          id: 'q35-notif-entrega',
+          codigoOriginal: '35',
+          text: '35  ¿Recibió una notificación por la entrega del producto?',
           type: 'single',
           options: SI_NO_NA,
           required: true,
         },
         {
-          id: 'q32b-comunicacion-retraso',
-          codigoOriginal: '32b',
-          text: '32b. En caso de retraso/delay, ¿Recibiste alguna comunicación indicando cuál sería la nueva previsión de entrega?',
+          id: 'q36-comunicacion-retraso',
+          codigoOriginal: '36',
+          text: '36. En caso de retraso/delay, ¿Recibiste alguna comunicación indicando cuál sería la nueva previsión de entrega?',
           type: 'single',
           options: SI_NO_NA,
+          showIf: eq('q34-entrega-tiempo', '1'),
           required: true,
         },
         {
-          id: 'q32c-nueva-fecha',
-          codigoOriginal: '32c',
-          text: '32c. ¿Cuál era la nueva fecha prevista?',
+          id: 'q36a-nueva-fecha',
+          codigoOriginal: '36a',
+          text: '36a. ¿Cuál era la nueva fecha prevista?',
           type: 'date',
-          showIf: eq('q32b-comunicacion-retraso', '1'),
+          showIf: eq('q36-comunicacion-retraso', '1'),
           required: true,
         },
         {
-          id: 'q32d-compensacion-demora',
-          codigoOriginal: '32d',
-          text: '32d. En caso de retraso/delay, ¿recibiste alguna compensación por la demora?',
+          id: 'q36b-compensacion-demora',
+          codigoOriginal: '36b',
+          text: '36b. En caso de retraso/delay, ¿recibiste alguna compensación por la demora?',
           type: 'single',
           options: SI_NO_NA,
+          showIf: eq('q34-entrega-tiempo', '1'),
           required: true,
         },
         {
-          id: 'q32e-cual-compensacion',
-          codigoOriginal: '32e',
-          text: '32e. ¿Cuál fue la compensación?',
+          id: 'q36c-cual-compensacion',
+          codigoOriginal: '36c',
+          text: '36c. ¿Cuál fue la compensación?',
           type: 'text',
-          showIf: eq('q32d-compensacion-demora', '1'),
+          showIf: eq('q36b-compensacion-demora', '1'),
           required: true,
         },
         {
           id: 'q35-dias-llegada',
-          codigoOriginal: '35',
+          codigoOriginal: '35-dias',
           text: '35. ¿A cuántos días naturales de la fecha de compra llegó el producto?',
           type: 'number',
-          required: false,
-          computed: naturalDaysBetween('q01-fecha-compra', 'q33-fecha-recepcion'),
+          required: true,
         },
         {
-          id: 'q38-llego-segun-anuncio',
-          codigoOriginal: '38',
-          text: '38. ¿Llegó el producto según lo informado en el anuncio del sitio web?',
+          id: 'q36-llego-segun-anuncio',
+          codigoOriginal: '36-anuncio',
+          text: '36. ¿Llegó el producto según lo informado en el anuncio del sitio web?',
           type: 'single',
           options: SI_NO_COD,
           required: true,
@@ -230,17 +301,14 @@ export const parte3: SurveySection = {
           required: false,
           computed: usdFrom('q46c-precio-final', 'q46c-1-moneda'),
         },
-        // TODO MELI: ENTREGA Total / CONTACTOS Total / Total (porcentaje) — sin fórmula
-        // TODO MELI: Tipo de entrega (On time / Early) — sin criterio
-        // TODO MELI: OK / NOT OK — sin criterio
+        // TODO MELI: totales / Tipo de entrega / OK·NOT OK — sin fórmula
         {
           id: 'q-desviacion-entrega',
           codigoOriginal: 'Desviación de la fecha de entrega',
           text: 'Desviación de la fecha de entrega -Días Naturales.',
           type: 'number',
           required: false,
-          // Usa fecha exacta prometida cuando aplica; si fue intervalo, Ops/MELI deben definir criterio
-          computed: naturalDaysBetween('q25a-fecha-prevista', 'q33-fecha-recepcion'),
+          computed: naturalDaysBetween('q25a-fecha-prevista', 'q32-fecha-recepcion'),
         },
       ],
     },

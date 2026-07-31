@@ -33,12 +33,13 @@ export function usdFrom(amountId: string, monedaId: string) {
   };
 }
 
-/** Fecha (input tipo date) → Date en UTC a medianoche; null si es inválida. */
+/** Fecha (date o datetime) → Date en UTC a medianoche; null si es inválida. */
 function parseDate(raw: AnswerValue | undefined): Date | null {
   if (typeof raw !== 'string' || raw.trim() === '') return null;
-  // Los inputs date entregan 'YYYY-MM-DD'; se ancla en UTC para evitar
-  // desfases por zona horaria al restar.
-  const d = new Date(`${raw.trim()}T00:00:00Z`);
+  // date → YYYY-MM-DD; datetime → YYYY-MM-DDTHH:MM → se toma solo el día
+  const day = raw.trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const d = new Date(`${day}T00:00:00Z`);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 

@@ -53,6 +53,10 @@ const UI: Record<string, Record<Lang, string>> = {
     pt: 'Respostas modificadas enviadas para revisão',
   },
   correctionsProgress: { es: 'Corregidas', pt: 'Corrigidas' },
+  timeOutOfRange: {
+    es: 'La hora debe estar entre {min} y {max}',
+    pt: 'A hora deve estar entre {min} e {max}',
+  },
 };
 
 export function t(key: keyof typeof UI, lang: Lang): string {

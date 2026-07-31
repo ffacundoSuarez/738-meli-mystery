@@ -79,6 +79,10 @@ export interface Question {
   scaleMaxLabel?: string;
   scaleMinLabelPt?: string;
   scaleMaxLabelPt?: string;
+  /** Límite inferior inclusivo para type time (HH:MM) */
+  minTime?: string;
+  /** Límite superior inclusivo para type time (HH:MM) */
+  maxTime?: string;
   matrixRows?: MatrixRow[];
   matrixColumns?: QuestionOption[];
   /** Valor derivado; se mergea en answers antes de persistir */

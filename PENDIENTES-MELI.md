@@ -1,48 +1,48 @@
-# Pendientes y bloqueantes para MELI — Etapa 2
+# Pendientes y bloqueantes para MELI — Etapa 2 (cuestionario v2)
 
-Consolidado a partir de los 38 comentarios del `.docx` (`«com=N»`) y
-hallazgos al transcribir el cuestionario 728 Mercado Envíos.
+Consolidado a partir de los comentarios del `.docx` v2 (`«com=N»`) y
+hallazgos al cargar / corregir el cuestionario 728 Mercado Envíos.
+
+## Cambios relevantes v1 → v2 (ya aplicados en código)
+
+- Ali Express fuera; Amazon disponible en CHI y COL
+- Nueva pregunta `06. Código de la compra`
+- `18a` número + `18b` foto (antes 18n con hint SUMAR FOTO)
+- Renumeración de promesas (`24.a`…`24.e`), `25c`→`25b`, entrega (`32`–`36c`)
+- Fotos de medio de notificación: `27b` / `28b` / `29b` / `30c`
+- Bloque nuevo **COMPRAS NO ENTREGADAS O CANCELADAS**
+- Transportadoras int. Chile: DHL + Pasarex (+ 97/98/99)
+- Columna Si/No en categorías auxiliares: metadato MEGA, no se muestra al shopper
+
+## Desviaciones intencionales de fidelidad literal
+
+| Caso | Qué hicimos |
+|---|---|
+| Monedas `(SOLO CHI)` / `(SOLO COL)` / `(TODOS)` | Recortados del label visible; el `showIf` por país ya filtra |
+| Numeración duplicada `35` / `36` en el v2 | IDs internos únicos (`35-dias`, `36-anuncio`) para no chocar en export |
+| Bloque cancelaciones mal parseado en Word (celdas pegadas) | Enunciados separados con el texto literal recuperable del fiel |
 
 ## Bloqueantes (sin criterio → no inventar en código)
 
 | Tema | Estado en código |
 |---|---|
-| Fórmula de totales por sección (`ENTREGA Total`, `CONTACTOS Total`) y `Total` general (dice "porcentaje" sin más) | TODO — no implementado |
+| Fórmula de totales por sección y `Total` general | TODO — no implementado |
 | Criterio de `Tipo de entrega` (On time / Early) | TODO — no implementado |
 | Criterio de `OK / NOT OK` | TODO — no implementado |
-| Qué contienen `Item`, `Origen del ítem` (`17b`), `Tiempo fuera`, `Contacto` (vacías / sin definición) | `17b` como texto libre opcional; resto no cargado como pregunta automática |
-| Transportadoras internacionales de Chile: tabla vacía en el documento | Solo opciones 97/98/99 |
-| Lógica de `31Q3.1` (comentario confuso; variables no están en la base) | No implementado |
-| Si `P70`–`P72` (etiqueta chica / gaiola / LM Hub) entran — MEGA dice que parecen de Brasil | **Fuera** por ahora |
-| Si `55e1 → Otros` se pregunta a todos o solo a quienes eligieron "Otros" | Hoy: companion solo si eligieron código 4 |
-| Competidor / Logística / Inventario sin códigos numéricos en el documento | Slugs internos: `falabella`, `ali-express`, `amazon`, `temu`, `player`/`seller`, `1p`/`3p` |
-| Cotización FX real (CLP/COP → USD) y fecha de referencia | Placeholder en `lib/survey-config/fx.ts` (`FX_AS_OF = 2026-07-01`) — Ops debe fijar |
-| Desviación de fecha de entrega cuando la promesa fue intervalo (26a/26b) | Usa `25a` si hay fecha exacta; intervalo sin criterio |
-
-## Comentarios del .docx (com=0 … com=38)
-
-Revisar el Word / `incoming/fiel.txt` buscando `«com=N»`. Incluyen, entre otros:
-
-- Categorías / Item / Tiempo fuera / Contacto / Compra (com 0–5)
-- Monedas nuevas (12.1, 19.1, 19a.1, 46c.1) (com 6, 10, 11, 33)
-- Vendido por "Otro" (com 8)
-- Origen del ítem (com 9)
-- Rangos de horario "Más ¿Cuántos?" / Especificar (com 12–14)
-- Totales Fecha Específica / Intervalo / Seleccionado (com 15, 19)
-- Tracking 31Q3.1 (com 20)
-- Describa calificación 55a.1/2/3 (com 21–23)
-- Otra compensación (com 24)
-- Contacto demorado Total (com 25)
-- N/A en notificaciones de entrega / delay / compensación (com 26–30)
-- Transportadoras nac./int. (com 31–32)
-- CONTACTOS Total / Padrao Total / Total / Tipo de entrega / OK·NOT OK (com 34–38)
+| Qué contienen `Item`, `Tiempo fuera`, `Contacto`, `Compra` | No cargados como pregunta automática |
+| Columna Si/No de categorías (¿filtra compras permitidas?) | No implementado — confirmar con MELI |
+| Lógica de `31Q3.1` | No implementado |
+| `P70`–`P72` (parecen de Brasil) | **Fuera** por ahora |
+| Cotización FX real y fecha de referencia | Placeholder en `lib/survey-config/fx.ts` |
+| Desviación de fecha cuando la promesa fue intervalo | Usa `25a` si hay fecha exacta; intervalo sin criterio |
+| Visibilidad / skip del bloque cancelaciones según `34` | Hoy se muestra siempre; confirmar flujo |
 
 ## Decisiones ya tomadas (no reabrir)
 
-- Solo Chile (`1`) y Colombia (`2`); Amazon solo COL
+- Solo Chile (`1`) y Colombia (`2`)
 - 3 partes por momento del proceso (`parte-1/2/3`)
-- IDs normalizados + `codigoOriginal` del documento
-- Fidelidad textual literal (erratas y comillas desparejas incluidas)
+- IDs normalizados + `codigoOriginal`
+- Fidelidad textual literal salvo las desviaciones de la tabla de arriba
 - P70–P72 fuera
 - FX como constante en código (cambiar = deploy)
 
@@ -50,7 +50,8 @@ Revisar el Word / `incoming/fiel.txt` buscando `«com=N»`. Incluyen, entre otro
 
 1. Confirmar cotizaciones FX y fecha `FX_AS_OF`.
 2. Definir fórmulas de totales, Tipo de entrega y OK/NOT OK.
-3. Completar transportadoras internacionales de Chile o confirmar que solo aplica 97/98/99.
-4. Confirmar códigos internos de Competidor / Logística / Inventario (o proveer numéricos).
-5. Definir contenido de Item / Origen / Tiempo fuera / Contacto / Compra.
+3. Confirmar si la columna Si/No de categorías debe filtrar el trabajo de campo.
+4. Confirmar códigos internos de Competidor / Logística / Inventario.
+5. Confirmar flujo del bloque cancelaciones (¿solo si `34` = Nunca llegó / No se entregó?).
 6. Confirmar si P70–P72 quedan definitivamente fuera.
+7. Aplicar en Supabase la migración `0003_meli_summary_answers_v2.sql` (allowlist `q34-entrega-tiempo`).

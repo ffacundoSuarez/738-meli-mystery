@@ -31,9 +31,14 @@ const COMPANION_ALLOW = new Set([
   '27a. ¿Cuál otro medio?',
   '28a. ¿Cuál otro medio?',
   '29a. ¿Cuál otro medio?',
+  '24.a.1 Especificar cuantas',
   '38.Q1.22.a. Especifique transportadora nacional',
   '38.Q1.22.b. Especifique transportadora internacional',
   'Adjuntar evidencias',
+  // Labels de moneda: se quitaron (SOLO CHI/COL/TODOS); el doc aún los tiene
+  'Pesos chilenos',
+  'Pesos colombianos',
+  'Dólares estadounidenses',
   // Hints de UI / Ops (no vienen del .docx)
   'Precargado al generar el link. Verifique que sea correcto.',
   'Audios, imágenes, videos, PDF y cualquier otro archivo.',

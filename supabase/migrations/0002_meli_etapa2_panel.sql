@@ -64,7 +64,7 @@ as $$
         'q8-competidor',
         'q10-ciudad',
         'q11-categoria',
-        'q32-entrega-tiempo',
+        'q34-entrega-tiempo',
         'ola',
         'reclutador',
         'ultima-etapa',

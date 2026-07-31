@@ -320,6 +320,20 @@ function isEvidenceValue(value: AnswerValue): boolean {
   );
 }
 
+/** ¿Valor HH:MM dentro del rango inclusivo [minTime, maxTime]? */
+export function isTimeInRange(
+  value: string,
+  minTime?: string,
+  maxTime?: string
+): boolean {
+  // Comparación lexicográfica válida para HH:MM (y HH:MM:SS del input time)
+  const normalized = value.trim().slice(0, 5);
+  if (!/^\d{2}:\d{2}$/.test(normalized)) return false;
+  if (minTime && normalized < minTime.slice(0, 5)) return false;
+  if (maxTime && normalized > maxTime.slice(0, 5)) return false;
+  return true;
+}
+
 /** ¿La pregunta visible tiene respuesta completa y no vacía? */
 export function isQuestionAnswered(
   question: Question,
@@ -327,6 +341,8 @@ export function isQuestionAnswered(
 ): boolean {
   if (!isQuestionVisible(question, answers)) return true;
   if (question.type === 'info') return true;
+  // Las derivadas se autocompletan; no deben bloquear el avance del módulo
+  if (question.computed) return true;
 
   const value = answers[question.id];
 
@@ -351,7 +367,18 @@ export function isQuestionAnswered(
   }
 
   if (!hasAnswerValue(value)) return false;
-  if (typeof value === 'string') return value.trim() !== '';
+  if (typeof value === 'string') {
+    if (value.trim() === '') return false;
+    // Bloquea el avance progresivo si la hora está fuera de minTime/maxTime
+    if (
+      question.type === 'time' &&
+      (question.minTime || question.maxTime) &&
+      !isTimeInRange(value, question.minTime, question.maxTime)
+    ) {
+      return false;
+    }
+    return true;
+  }
   return true;
 }
 
