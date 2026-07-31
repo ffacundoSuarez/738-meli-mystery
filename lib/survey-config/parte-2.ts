@@ -46,6 +46,14 @@ export const parte2: SurveySection = {
           required: true,
         },
         {
+          id: 'q27b-foto-medio',
+          codigoOriginal: '27b',
+          text: '27b. Adjuntar foto medio lo notificaron:',
+          type: 'evidence',
+          showIf: eq('q27-confirmacion', '1'),
+          required: false,
+        },
+        {
           id: 'q28-preparacion',
           codigoOriginal: '28',
           text: '28. ¿Recibió un mensaje de preparación del pedido?',
@@ -71,6 +79,14 @@ export const parte2: SurveySection = {
           required: true,
         },
         {
+          id: 'q28b-foto-medio',
+          codigoOriginal: '28b',
+          text: '28b. Adjuntar foto medio lo notificaron:',
+          type: 'evidence',
+          showIf: eq('q28-preparacion', '1'),
+          required: false,
+        },
+        {
           id: 'q29-salida',
           codigoOriginal: '29',
           text: '29. ¿Recibió un mensaje de salida del envío?',
@@ -94,6 +110,14 @@ export const parte2: SurveySection = {
           type: 'text',
           showIf: eq('q29a-medio', '97'),
           required: true,
+        },
+        {
+          id: 'q29b-foto-medio',
+          codigoOriginal: '29b',
+          text: '29b. Adjuntar foto medio lo notificaron:',
+          type: 'evidence',
+          showIf: eq('q29-salida', '1'),
+          required: false,
         },
         {
           id: 'q30-entregado',
@@ -128,9 +152,17 @@ export const parte2: SurveySection = {
           required: true,
         },
         {
-          id: 'q31-1-adicionales',
-          codigoOriginal: '31.1',
-          text: '31.1. Además de los mensajes anteriormente comentados, ¿Recibió notificaciones adicionales por esta compra?',
+          id: 'q30c-foto-medio',
+          codigoOriginal: '30c',
+          text: '30c. Adjuntar foto medio lo notificaron:',
+          type: 'evidence',
+          showIf: eq('q30-entregado', '1'),
+          required: false,
+        },
+        {
+          id: 'q31-adicionales',
+          codigoOriginal: '31',
+          text: '31. Además de los mensajes anteriormente comentados, ¿Recibió notificaciones adicionales por esta compra?',
           type: 'single',
           options: SI_NO_COD,
           required: true,
@@ -140,7 +172,7 @@ export const parte2: SurveySection = {
           codigoOriginal: '31a',
           text: '31a. Adjuntar imagen de las notificaciones adicionales por esta compra.',
           type: 'evidence',
-          showIf: eq('q31-1-adicionales', '1'),
+          showIf: eq('q31-adicionales', '1'),
           required: false,
         },
         {
@@ -161,7 +193,19 @@ export const parte2: SurveySection = {
           text: '31Q4. Cargar en FORMATO TEXTO el recorrido de su compra desde la aprobación hasta su entrega.',
           type: 'longtext',
           required: true,
-          hint: 'Ejemplo:',
+          hint: `Ejemplo:
+Enviado con PASAREX
+ID de rastreo: AMZPSR021029556
+Los agentes de servicio al cliente tienen acceso a la misma información que usted.
+
+lunes, 2 de febrero
+12:21 p. m.
+Paquete entregado al cliente
+Medellín, CO
+
+10:23 a. m.
+Paquete en camino a la dirección de entrega
+Medellín, CO`,
         },
         {
           id: 'q54-ajuste-fecha',
@@ -179,7 +223,7 @@ export const parte2: SurveySection = {
             },
           ],
           required: true,
-          hint: 'Notificación de MARKETPLACE por ajuste en Fecha de entrega',
+          hint: 'NOTIFICACIÓN DE MARKETPLACE POR AJUSTE EN FECHA DE ENTREGA',
         },
         {
           id: 'q54-1-foto-promesa',
@@ -193,7 +237,7 @@ export const parte2: SurveySection = {
     {
       id: 'contactos',
       title: 'CONTACTOS',
-      description: 'Contacto producto demorado',
+      description: 'CONTACTO PRODUCTO DEMORADO',
       questions: [
         {
           id: 'q55-1-contactar-vendedor',

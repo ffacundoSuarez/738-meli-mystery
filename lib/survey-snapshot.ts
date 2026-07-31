@@ -62,7 +62,7 @@ export function getScreeningSnapshot(
     categoria = optionLabel(CATEGORIAS, categoriaCode);
   }
 
-  const tipoCode = answers['q32-entrega-tiempo'] as string | undefined;
+  const tipoCode = answers['q34-entrega-tiempo'] as string | undefined;
   const tipoEntrega = tipoCode
     ? optionLabel(ENTREGA_TIEMPO, tipoCode)
     : undefined;

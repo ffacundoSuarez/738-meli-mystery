@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { DateTimePicker } from '@/components/survey/DateTimePicker';
-import { getOrderedOptions, getVisibleMatrixRows } from '@/lib/survey-logic';
+import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange } from '@/lib/survey-logic';
 import { pick } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
 import {
@@ -169,12 +169,29 @@ export function QuestionInput({
   }
 
   if (question.type === 'time') {
+    const timeValue = (value as string) || '';
+    const outOfRange =
+      Boolean(timeValue) &&
+      (question.minTime || question.maxTime) &&
+      !isTimeInRange(timeValue, question.minTime, question.maxTime);
+
     return (
-      <Input
-        type="time"
-        value={(value as string) || ''}
-        onChange={(e) => updateValue(e.target.value)}
-      />
+      <div className="space-y-1.5">
+        <Input
+          type="time"
+          value={timeValue}
+          min={question.minTime}
+          max={question.maxTime}
+          onChange={(e) => updateValue(e.target.value)}
+        />
+        {outOfRange && (
+          <p className="text-sm text-destructive">
+            {t('timeOutOfRange', lang)
+              .replace('{min}', question.minTime ?? '')
+              .replace('{max}', question.maxTime ?? '')}
+          </p>
+        )}
+      </div>
     );
   }
 
@@ -188,14 +205,19 @@ export function QuestionInput({
   }
 
   if (question.type === 'number') {
+    const isComputed = Boolean(question.computed);
     return (
       <Input
         type="number"
         inputMode="decimal"
         min={0}
         value={(value as string) || ''}
-        onChange={(e) => updateValue(e.target.value)}
+        onChange={(e) => {
+          if (!isComputed) updateValue(e.target.value);
+        }}
+        readOnly={isComputed}
         placeholder={t('writeAnswer', lang)}
+        className={isComputed ? 'bg-muted/50 text-muted-foreground' : undefined}
       />
     );
   }

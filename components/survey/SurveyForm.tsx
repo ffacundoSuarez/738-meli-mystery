@@ -533,7 +533,7 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         )}
 
         {question.hint && question.type !== 'info' && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
             {interpolate(pick(question.hint, question.hintPt, lang), answers)}
           </p>
         )}

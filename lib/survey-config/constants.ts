@@ -10,7 +10,7 @@ import { Condition, ConditionClause, QuestionOption, SurveyModule } from '../typ
 // ⚠️ PUNTOS ACOPLADOS AL SQL / DASHBOARD:
 //   - 'f1-pais' precargado por meli_admin_create_postulante
 //   - Allowlist de screening: migración 0002 (q8-competidor, q10-ciudad,
-//     q11-categoria, q32-entrega-tiempo, ola) + lib/survey-snapshot.ts
+//     q11-categoria, q34-entrega-tiempo, ola) + lib/survey-snapshot.ts
 // ============================================================
 
 // --- Helpers de condiciones -------------------------------------------------
@@ -80,12 +80,12 @@ export const CIUDADES: QuestionOption[] = [
 // Slugs estables (el documento trae códigos vacíos). Amazon solo Colombia.
 
 /** Slugs estables de competidores (documentado: el doc no trae códigos). */
-export const COMPETIDOR_SLUGS = ['falabella', 'ali-express', 'amazon', 'temu'] as const;
+export const COMPETIDOR_SLUGS = ['falabella', 'amazon', 'temu'] as const;
 
+/** Competidores v2: sin Ali Express; Amazon en CHI y COL. */
 export const COMPETIDORES: QuestionOption[] = [
   { value: 'falabella', label: 'Falabella' },
-  { value: 'ali-express', label: 'Ali Express' },
-  { value: 'amazon', label: 'Amazon', showIf: pais('2') },
+  { value: 'amazon', label: 'Amazon' },
   { value: 'temu', label: 'Temu' },
 ];
 
@@ -93,8 +93,7 @@ export const COMPETIDORES: QuestionOption[] = [
 
 export const ENVIADO_POR: QuestionOption[] = [
   { value: 'falabella', label: 'Falabella' },
-  { value: 'ali-express', label: 'Ali Express' },
-  { value: 'amazon', label: 'Amazon', showIf: pais('2') },
+  { value: 'amazon', label: 'Amazon' },
   { value: 'temu', label: 'Temu' },
 ];
 
@@ -102,8 +101,7 @@ export const ENVIADO_POR: QuestionOption[] = [
 
 export const VENDIDO_POR: QuestionOption[] = [
   { value: 'falabella', label: 'Falabella' },
-  { value: 'ali-express', label: 'Ali Express' },
-  { value: 'amazon', label: 'Amazon', showIf: pais('2') },
+  { value: 'amazon', label: 'Amazon' },
   { value: 'temu', label: 'Temu' },
   { value: 'otro', label: 'Otro' },
 ];
@@ -149,10 +147,11 @@ export const CATEGORIA_OTRO = '19';
 // --- Monedas (12.1 / 19.1 / 19a.1 / 46c.1) ----------------------------------
 // 1=CLP (solo Chile), 2=COP (solo Colombia), 3=USD (ambos).
 
+/** Labels sin (SOLO CHI/COL/TODOS): el showIf ya filtra por país. */
 export const MONEDAS: QuestionOption[] = [
-  { value: '1', label: 'Pesos chilenos (SOLO CHI)', showIf: pais('1') },
-  { value: '2', label: 'Pesos colombianos (SOLO COL)', showIf: pais('2') },
-  { value: '3', label: 'Dólares estadounidenses (TODOS)' },
+  { value: '1', label: 'Pesos chilenos', showIf: pais('1') },
+  { value: '2', label: 'Pesos colombianos', showIf: pais('2') },
+  { value: '3', label: 'Dólares estadounidenses' },
 ];
 
 // --- Logística (pregunta 15) ------------------------------------------------
@@ -205,9 +204,10 @@ export const TRANSPORTADORAS_NAC_CO: QuestionOption[] = [
   { value: '99', label: 'No sabe' },
 ];
 
-// Chile internacional: la tabla del documento solo trae 97/98/99
-// (el código 1 venía con label vacío → se omite).
+// Chile internacional (v2): DHL + Pasarex + 97/98/99
 export const TRANSPORTADORAS_INT_CL: QuestionOption[] = [
+  { value: '1', label: 'DHL' },
+  { value: '2', label: 'Pasarex' },
   { value: '97', label: 'Otros especificar:' },
   { value: '98', label: 'No especifica' },
   { value: '99', label: 'No sabe' },

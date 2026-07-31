@@ -14,17 +14,23 @@
  * Salida: un párrafo por línea, con marcadores de estructura de tabla.
  * Es la fuente de verdad para transcribir y para el verificador de fidelidad.
  */
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import JSZip from 'jszip';
 
 const DOCX = process.argv[2];
 
 const OUT = process.argv[3];
 
-const xml = execFileSync('unzip', ['-p', DOCX, 'word/document.xml'], {
-  encoding: 'utf8',
-  maxBuffer: 64 * 1024 * 1024,
-});
+/** Lee word/document.xml del .docx (zip) sin depender de unzip del sistema. */
+async function readDocumentXml(docxPath) {
+  const buf = fs.readFileSync(docxPath);
+  const zip = await JSZip.loadAsync(buf);
+  const entry = zip.file('word/document.xml');
+  if (!entry) throw new Error('word/document.xml no encontrado en el .docx');
+  return entry.async('string');
+}
+
+const xml = await readDocumentXml(DOCX);
 
 function unescapeXml(s) {
   return s
