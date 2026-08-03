@@ -316,7 +316,12 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     if (isFinalized || surveyThankYou) return;
     setSaving(true);
     try {
-      const sectionAnswers = getSectionAnswers(sectionId);
+      // Última parte reviewable: marcar encuesta cerrada y mostrar agradecimiento
+      const isLastReviewable = !getNextReviewableSection(sectionId);
+      const sectionAnswers = {
+        ...getSectionAnswers(sectionId),
+        ...(submitReview && isLastReviewable ? { 'encuesta-cerrada': 'si' } : {}),
+      };
       const updated = await saveStageByToken(
         accessToken,
         sectionId,
@@ -332,6 +337,10 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         toast.success(`"${pick(section.title, section.titlePt, lang)}" ${t('sentReview', lang)}`);
         if (Object.keys(updated.reviewFlags || {}).length === 0) {
           setCorrectionMode(false);
+        }
+        if (isLastReviewable) {
+          setSurveyThankYou(true);
+          return;
         }
         setShowStageGate(true);
         return;
@@ -621,7 +630,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
             {STAGE_STATUS_TEXT[currentStageStatus][lang]}
           </div>
           {currentStageStatus !== 'rechazada' && (
-            <p className="text-sm opacity-80">{t('completeNext', lang)}</p>
+            <p className="text-sm opacity-80">
+              {nextSectionTitle ? t('completeNext', lang) : t('lastPartSent', lang)}
+            </p>
           )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2">

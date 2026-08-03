@@ -13,8 +13,8 @@ const UI: Record<string, Record<Lang, string>> = {
   },
   thankYouTitle: { es: '¡Muchas gracias por responder!', pt: 'Muito obrigado por responder!' },
   thankYouDesc: {
-    es: 'Sus respuestas fueron registradas correctamente. Agradecemos su tiempo y colaboración.',
-    pt: 'As suas respostas foram registadas corretamente. Agradecemos o seu tempo e colaboração.',
+    es: 'Sus respuestas fueron registradas correctamente y enviadas a revisión. Agradecemos su tiempo y colaboración.',
+    pt: 'As suas respostas foram registadas corretamente e enviadas para revisão. Agradecemos o seu tempo e colaboração.',
   },
   code: { es: 'Código', pt: 'Código' },
   processClosed: { es: 'Proceso cerrado', pt: 'Processo encerrado' },
@@ -28,6 +28,10 @@ const UI: Record<string, Record<Lang, string>> = {
   stageRejected: { es: 'rechazada', pt: 'rejeitada' },
   stageIs: { es: 'está', pt: 'está' },
   completeNext: { es: 'Complete la siguiente parte cuando corresponda.', pt: 'Complete a parte seguinte quando corresponder.' },
+  lastPartSent: {
+    es: 'Esta es la última parte. Sus respuestas fueron enviadas a revisión.',
+    pt: 'Esta é a última parte. As suas respostas foram enviadas para revisão.',
+  },
   goTo: { es: 'Ir a', pt: 'Ir para' },
   startPart: { es: 'Iniciar', pt: 'Iniciar' },
   viewAnswers: { es: 'Ver respuestas', pt: 'Ver respostas' },

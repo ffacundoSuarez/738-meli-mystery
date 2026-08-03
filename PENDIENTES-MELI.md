@@ -1,57 +1,47 @@
-# Pendientes y bloqueantes para MELI — Etapa 2 (cuestionario v2)
+# Pendientes y bloqueantes para MELI — Etapa 2 (cuestionario 31.07 A–F)
 
-Consolidado a partir de los comentarios del `.docx` v2 (`«com=N»`) y
-hallazgos al cargar / corregir el cuestionario 728 Mercado Envíos.
+Consolidado tras portar el Word `728 - Mystery Mercado Envios - Cuestionario 31.07.docx`.
 
-## Cambios relevantes v1 → v2 (ya aplicados en código)
+## Cambios 31.07 ya aplicados en código
 
-- Ali Express fuera; Amazon disponible en CHI y COL
-- Nueva pregunta `06. Código de la compra`
-- `18a` número + `18b` foto (antes 18n con hint SUMAR FOTO)
-- Renumeración de promesas (`24.a`…`24.e`), `25c`→`25b`, entrega (`32`–`36c`)
-- Fotos de medio de notificación: `27b` / `28b` / `29b` / `30c`
-- Bloque nuevo **COMPRAS NO ENTREGADAS O CANCELADAS**
-- Transportadoras int. Chile: DHL + Pasarex (+ 97/98/99)
-- Columna Si/No en categorías auxiliares: metadato MEGA, no se muestra al shopper
+- Renumeración A–F en `codigoOriginal` + textos literales
+- **D00** nueva (gate de ajuste de fecha); D01/D01.1 solo si D00 = Sí
+  (Word decía `HACER SOLO SI D01 = 1` — typo interpretado como D00)
+- D03.1.1 / D03.2.1 / D03.3.1 visibles con el tramo de D03 (no solo si Otros)
+- **Desviación de la fecha** eliminada (no figura en 31.07)
+- Categorías A10: códigos 1–11 + 97 Otros
+- B02.1 numérico; F09.1/F09.2 texto libre; F12 comprobante fiscal
+- Mensaje de finalización al enviar parte-3
 
 ## Desviaciones intencionales de fidelidad literal
 
 | Caso | Qué hicimos |
 |---|---|
 | Monedas `(SOLO CHI)` / `(SOLO COL)` / `(TODOS)` | Recortados del label visible; el `showIf` por país ya filtra |
-| Numeración duplicada `35` / `36` en el v2 | IDs internos únicos (`35-dias`, `36-anuncio`) para no chocar en export |
-| Bloque cancelaciones mal parseado en Word (celdas pegadas) | Enunciados separados con el texto literal recuperable del fiel |
+| A16 antes de A13 en el formulario | Para que el filtro 1P de A13 funcione |
+| E03 “y el reembolso se acredita” | Soft: se muestra si E02 = Sí |
+| F12.1/F12.2 sin PROGRAMADOR en Word | Mantienen `showIf F12=1` |
 
 ## Bloqueantes (sin criterio → no inventar en código)
 
 | Tema | Estado en código |
 |---|---|
-| Fórmula de totales por sección y `Total` general | TODO — no implementado |
-| Criterio de `Tipo de entrega` (On time / Early) | TODO — no implementado |
-| Criterio de `OK / NOT OK` | TODO — no implementado |
-| Qué contienen `Item`, `Tiempo fuera`, `Contacto`, `Compra` | No cargados como pregunta automática |
-| Columna Si/No de categorías (¿filtra compras permitidas?) | No implementado — confirmar con MELI |
-| Lógica de `31Q3.1` | No implementado |
-| `P70`–`P72` (parecen de Brasil) | **Fuera** por ahora |
+| Fórmula de totales por sección y `Total` general | Fuera del 31.07 |
+| Criterio de `Tipo de entrega` (On time / Early) | Fuera del 31.07 |
+| Criterio de `OK / NOT OK` | Fuera del 31.07 |
 | Cotización FX real y fecha de referencia | Placeholder en `lib/survey-config/fx.ts` |
-| Desviación de fecha cuando la promesa fue intervalo | Usa `25a` si hay fecha exacta; intervalo sin criterio |
-| Visibilidad / skip del bloque cancelaciones según `34` | Hoy se muestra siempre; confirmar flujo |
+| Visibilidad / skip del bloque cancelaciones según F03 | Hoy se muestra siempre; confirmar flujo |
 
 ## Decisiones ya tomadas (no reabrir)
 
 - Solo Chile (`1`) y Colombia (`2`)
 - 3 partes por momento del proceso (`parte-1/2/3`)
-- IDs normalizados + `codigoOriginal`
+- IDs internos estables + `codigoOriginal` A–F
 - Fidelidad textual literal salvo las desviaciones de la tabla de arriba
-- P70–P72 fuera
 - FX como constante en código (cambiar = deploy)
 
 ## Acción pedida a MELI / Ops
 
 1. Confirmar cotizaciones FX y fecha `FX_AS_OF`.
-2. Definir fórmulas de totales, Tipo de entrega y OK/NOT OK.
-3. Confirmar si la columna Si/No de categorías debe filtrar el trabajo de campo.
-4. Confirmar códigos internos de Competidor / Logística / Inventario.
-5. Confirmar flujo del bloque cancelaciones (¿solo si `34` = Nunca llegó / No se entregó?).
-6. Confirmar si P70–P72 quedan definitivamente fuera.
-7. Aplicar en Supabase la migración `0003_meli_summary_answers_v2.sql` (allowlist `q34-entrega-tiempo`).
+2. Confirmar flujo del bloque cancelaciones (¿solo si F03 = Nunca llegó / No se entregó?).
+3. Confirmar si E03 debe pedirse solo cuando hubo reembolso efectivo (hoy: si E02 = Sí).
