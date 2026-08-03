@@ -26,14 +26,13 @@ const FORBIDDEN = [
 /** Textos de acompañamiento (Otro/especificar) que no están como enunciado
  *  independiente en el .docx — se aceptan si el fragmento clave está en fiel. */
 const COMPANION_ALLOW = new Set([
-  '11. Especifique la categoría',
-  '14. Especifique vendido por',
-  '27a. ¿Cuál otro medio?',
-  '28a. ¿Cuál otro medio?',
-  '29a. ¿Cuál otro medio?',
-  '24.a.1 Especificar cuantas',
-  '38.Q1.22.a. Especifique transportadora nacional',
-  '38.Q1.22.b. Especifique transportadora internacional',
+  'A10. Especifique la categoría',
+  'A13. Especifique vendido por',
+  'C01.1. ¿Cuál otro medio?',
+  'C02.1. ¿Cuál otro medio?',
+  'C03.1. ¿Cuál otro medio?',
+  'C04.1. ¿Cuál otro medio?',
+  'D07.1. Especifique otra compensación',
   'Adjuntar evidencias',
   // Labels de moneda: se quitaron (SOLO CHI/COL/TODOS); el doc aún los tiene
   'Pesos chilenos',
@@ -42,6 +41,10 @@ const COMPANION_ALLOW = new Set([
   // Hints de UI / Ops (no vienen del .docx)
   'Precargado al generar el link. Verifique que sea correcto.',
   'Audios, imágenes, videos, PDF y cualquier otro archivo.',
+  // País aux (no está como enunciado shopper en el body A–F)
+  'Pais',
+  'Chile',
+  'Colombia',
 ]);
 
 function collectStrings(): { where: string; value: string }[] {
@@ -66,7 +69,7 @@ function main() {
   } catch {
     console.error(`No se encontró ${FIEL_PATH}. Regenerá con:`);
     console.error(
-      '  node scripts/extraer-fiel.mjs "incoming/728 - Mystery Mercado Envios - Cuestionario.docx" incoming/fiel.txt'
+      '  node scripts/extraer-fiel.mjs "incoming/728 - Mystery Mercado Envios - Cuestionario 31.07.docx" incoming/fiel.txt'
     );
     process.exit(2);
   }

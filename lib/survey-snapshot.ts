@@ -56,7 +56,7 @@ export function getScreeningSnapshot(
 
   const categoriaCode = answers['q11-categoria'] as string | undefined;
   let categoria: string | undefined;
-  if (categoriaCode === '19') {
+  if (categoriaCode === '97') {
     categoria = (answers['q11-categoria-otra'] as string) || 'Otros (especificar)';
   } else if (categoriaCode) {
     categoria = optionLabel(CATEGORIAS, categoriaCode);

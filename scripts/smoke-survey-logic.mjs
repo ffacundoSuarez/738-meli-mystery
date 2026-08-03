@@ -70,23 +70,23 @@ function evaluateCondition(condition, answers) {
   return true;
 }
 
-/** Tramos 55a: 0–6 / 7–8 / 9–10 */
+/** Tramos D03 (antes 55a): 0–6 / 7–8 / 9–10 */
 const band06 = {
   all: [
-    { questionId: 'q55a', operator: 'gte', values: ['0'] },
-    { questionId: 'q55a', operator: 'lte', values: ['6'] },
+    { questionId: 'q55a-facilidad', operator: 'gte', values: ['0'] },
+    { questionId: 'q55a-facilidad', operator: 'lte', values: ['6'] },
   ],
 };
 const band78 = {
   all: [
-    { questionId: 'q55a', operator: 'gte', values: ['7'] },
-    { questionId: 'q55a', operator: 'lte', values: ['8'] },
+    { questionId: 'q55a-facilidad', operator: 'gte', values: ['7'] },
+    { questionId: 'q55a-facilidad', operator: 'lte', values: ['8'] },
   ],
 };
 const band910 = {
   all: [
-    { questionId: 'q55a', operator: 'gte', values: ['9'] },
-    { questionId: 'q55a', operator: 'lte', values: ['10'] },
+    { questionId: 'q55a-facilidad', operator: 'gte', values: ['9'] },
+    { questionId: 'q55a-facilidad', operator: 'lte', values: ['10'] },
   ],
 };
 
@@ -101,7 +101,7 @@ const cases = [
 
 let failed = 0;
 for (const [score, e06, e78, e910] of cases) {
-  const answers = { q55a: String(score) };
+  const answers = { 'q55a-facilidad': String(score) };
   const a = evaluateCondition(band06, answers);
   const b = evaluateCondition(band78, answers);
   const c = evaluateCondition(band910, answers);
@@ -114,7 +114,7 @@ for (const [score, e06, e78, e910] of cases) {
 }
 
 // No numéricos → false
-if (evaluateCondition(band06, { q55a: 'abc' }) !== false) {
+if (evaluateCondition(band06, { 'q55a-facilidad': 'abc' }) !== false) {
   console.error('FAIL non-numeric should be false');
   failed++;
 } else {
@@ -126,6 +126,21 @@ if (evaluateCondition(band06, {}) !== false) {
   failed++;
 } else {
   console.log('OK empty');
+}
+
+// D00 gate: D01 solo si D00 = 1
+const d01Gate = { questionId: 'q-d00-cambio-fecha', values: ['1'] };
+if (evaluateCondition(d01Gate, { 'q-d00-cambio-fecha': '1' }) !== true) {
+  console.error('FAIL D00=1 should show D01');
+  failed++;
+} else {
+  console.log('OK D00=1 shows D01');
+}
+if (evaluateCondition(d01Gate, { 'q-d00-cambio-fecha': '2' }) !== false) {
+  console.error('FAIL D00=2 should hide D01');
+  failed++;
+} else {
+  console.log('OK D00=2 hides D01');
 }
 
 if (failed > 0) {
