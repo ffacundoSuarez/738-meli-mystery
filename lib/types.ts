@@ -83,6 +83,8 @@ export interface Question {
   minTime?: string;
   /** Límite superior inclusivo para type time (HH:MM) */
   maxTime?: string;
+  /** Validación extra de contenido (p. ej. historial de tracking C07) */
+  validate?: 'trackingHistory';
   matrixRows?: MatrixRow[];
   matrixColumns?: QuestionOption[];
   /** Valor derivado; se mergea en answers antes de persistir */

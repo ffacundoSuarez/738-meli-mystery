@@ -69,7 +69,7 @@ function main() {
   } catch {
     console.error(`No se encontró ${FIEL_PATH}. Regenerá con:`);
     console.error(
-      '  node scripts/extraer-fiel.mjs "incoming/728 - Mystery Mercado Envios - Cuestionario 31.07.docx" incoming/fiel.txt'
+      '  node scripts/extraer-fiel.mjs "incoming/728 - Mystery Mercado Envios - Cuestionario 03.08.docx" incoming/fiel.txt'
     );
     process.exit(2);
   }

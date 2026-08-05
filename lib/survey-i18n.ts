@@ -61,6 +61,18 @@ const UI: Record<string, Record<Lang, string>> = {
     es: 'La hora debe estar entre {min} y {max}',
     pt: 'A hora deve estar entre {min} e {max}',
   },
+  dateOutsideFieldPeriod: {
+    es: 'La fecha parece estar fuera del período de campo ({start} – {end}). Verifique que sea correcta.',
+    pt: 'A data parece estar fora do período de campo ({start} – {end}). Verifique se está correta.',
+  },
+  trackingHistoryTooShort: {
+    es: 'Pegue el historial completo del tracking (varias líneas con fechas/estados), no un texto de prueba.',
+    pt: 'Cole o histórico completo do tracking (várias linhas com datas/estados), não um texto de teste.',
+  },
+  trackingHistoryWeakStructure: {
+    es: 'El texto no parece un historial de tracking. Incluya ID/rastreo, fechas u horarios y estados del envío.',
+    pt: 'O texto não parece um histórico de tracking. Inclua ID/rastreio, datas ou horários e estados do envio.',
+  },
 };
 
 export function t(key: keyof typeof UI, lang: Lang): string {

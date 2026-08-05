@@ -1,14 +1,21 @@
-# Pendientes y bloqueantes para MELI — Etapa 2 (cuestionario 31.07 A–F)
+# Pendientes y bloqueantes para MELI — Etapa 2 (cuestionario 03.08 A–F)
 
-Consolidado tras portar el Word `728 - Mystery Mercado Envios - Cuestionario 31.07.docx`.
+Consolidado tras portar el Word `728 - Mystery Mercado Envios - Cuestionario 03.08.docx`
+(base 31.07 + ajustes de hints A12/A13 y tilde en B05).
 
-## Cambios 31.07 ya aplicados en código
+## Cambios 03.08 ya aplicados en código
+
+- Hint A12: se suma el párrafo de Amazon (“Enviado por”) que antes estaba en A13
+- Hint A13: texto nuevo sobre 3P / Falabella (se quitó la línea huérfana no presente en Word)
+- B05 opción 3: `especifico` → `específico`
+
+## Cambios 31.07 ya aplicados en código (se mantienen)
 
 - Renumeración A–F en `codigoOriginal` + textos literales
 - **D00** nueva (gate de ajuste de fecha); D01/D01.1 solo si D00 = Sí
   (Word decía `HACER SOLO SI D01 = 1` — typo interpretado como D00)
 - D03.1.1 / D03.2.1 / D03.3.1 visibles con el tramo de D03 (no solo si Otros)
-- **Desviación de la fecha** eliminada (no figura en 31.07)
+- **Desviación de la fecha** eliminada (no figura desde 31.07)
 - Categorías A10: códigos 1–11 + 97 Otros
 - B02.1 numérico; F09.1/F09.2 texto libre; F12 comprobante fiscal
 - Mensaje de finalización al enviar parte-3
@@ -26,9 +33,9 @@ Consolidado tras portar el Word `728 - Mystery Mercado Envios - Cuestionario 31.
 
 | Tema | Estado en código |
 |---|---|
-| Fórmula de totales por sección y `Total` general | Fuera del 31.07 |
-| Criterio de `Tipo de entrega` (On time / Early) | Fuera del 31.07 |
-| Criterio de `OK / NOT OK` | Fuera del 31.07 |
+| Fórmula de totales por sección y `Total` general | Fuera del 03.08 |
+| Criterio de `Tipo de entrega` (On time / Early) | Fuera del 03.08 |
+| Criterio de `OK / NOT OK` | Fuera del 03.08 |
 | Cotización FX real y fecha de referencia | Placeholder en `lib/survey-config/fx.ts` |
 | Visibilidad / skip del bloque cancelaciones según F03 | Hoy se muestra siempre; confirmar flujo |
 

@@ -8,7 +8,7 @@ import {
   range,
 } from './constants';
 
-// Parte 2 — cuestionario 31.07 (C + D). IDs internos estables.
+// Parte 2 — cuestionario 03.08 (C + D). IDs internos estables.
 
 export const parte2: SurveySection = {
   id: 'parte-2',
@@ -182,6 +182,7 @@ export const parte2: SurveySection = {
           text: 'C07. Copie en formato TEXTO el historial completo del recorrido del pedido, desde la aprobación de la compra hasta la entrega.',
           type: 'longtext',
           required: true,
+          validate: 'trackingHistory',
           hint: `Ejemplo:
 Enviado con PASAREX
 ID de rastreo: AMZPSR021029556
