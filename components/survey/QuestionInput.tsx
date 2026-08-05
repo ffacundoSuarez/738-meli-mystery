@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { DateTimePicker } from '@/components/survey/DateTimePicker';
-import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange } from '@/lib/survey-logic';
+import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory } from '@/lib/survey-logic';
 import { pick } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
 import {
@@ -148,23 +148,62 @@ export function QuestionInput({
   }
 
   if (question.type === 'longtext') {
+    const textValue = (value as string) || '';
+    const trackingCheck =
+      question.validate === 'trackingHistory' && textValue.trim()
+        ? validateTrackingHistory(textValue)
+        : null;
+    const trackingMsg =
+      trackingCheck &&
+      trackingCheck.level !== 'ok' &&
+      trackingCheck.messageKey
+        ? t(trackingCheck.messageKey, lang)
+        : null;
+
     return (
-      <Textarea
-        value={(value as string) || ''}
-        onChange={(e) => updateValue(e.target.value)}
-        placeholder={t('writeAnswer', lang)}
-        className="min-h-[100px]"
-      />
+      <div className="space-y-1.5">
+        <Textarea
+          value={textValue}
+          onChange={(e) => updateValue(e.target.value)}
+          placeholder={t('writeAnswer', lang)}
+          className="min-h-[100px]"
+        />
+        {trackingMsg && (
+          <p
+            className={
+              trackingCheck?.level === 'error'
+                ? 'text-sm text-destructive'
+                : 'text-sm text-amber-600 dark:text-amber-500'
+            }
+          >
+            {trackingMsg}
+          </p>
+        )}
+      </div>
     );
   }
 
   if (question.type === 'date') {
+    const dateValue = (value as string) || '';
+    const outsidePeriod =
+      Boolean(dateValue) && isDateOutsideFieldPeriod(dateValue, answers);
+    const { start, end } = getFieldPeriodBounds(answers);
+
     return (
-      <Input
-        type="date"
-        value={(value as string) || ''}
-        onChange={(e) => updateValue(e.target.value)}
-      />
+      <div className="space-y-1.5">
+        <Input
+          type="date"
+          value={dateValue}
+          onChange={(e) => updateValue(e.target.value)}
+        />
+        {outsidePeriod && (
+          <p className="text-sm text-amber-600 dark:text-amber-500">
+            {t('dateOutsideFieldPeriod', lang)
+              .replace('{start}', start ?? '—')
+              .replace('{end}', end ?? '—')}
+          </p>
+        )}
+      </div>
     );
   }
 

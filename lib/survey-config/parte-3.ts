@@ -9,8 +9,8 @@ import {
 } from './constants';
 import { usdFrom } from './computed';
 
-// Parte 3 — cuestionario 31.07 (E + F). IDs internos estables.
-// Desviación de fecha eliminada (no figura en Word 31.07).
+// Parte 3 — cuestionario 03.08 (E + F). IDs internos estables.
+// Desviación de fecha eliminada (no figura desde Word 31.07).
 
 export const parte3: SurveySection = {
   id: 'parte-3',

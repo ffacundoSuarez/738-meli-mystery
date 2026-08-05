@@ -1,7 +1,7 @@
 import { Condition, ConditionClause, QuestionOption, SurveyModule } from '../types';
 
 // ============================================================
-// Catálogos y condiciones — Cuestionario Mercado Envíos 31.07 (A–F)
+// Catálogos y condiciones — Cuestionario Mercado Envíos 03.08 (A–F)
 //
 // Fidelidad textual: labels literales desde incoming/fiel.txt.
 //

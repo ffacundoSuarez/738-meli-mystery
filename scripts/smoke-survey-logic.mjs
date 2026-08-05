@@ -143,6 +143,124 @@ if (evaluateCondition(d01Gate, { 'q-d00-cambio-fecha': '2' }) !== false) {
   console.log('OK D00=2 hides D01');
 }
 
+// --- Validaciones Maia: período de campo + historial C07 -------------------
+
+function isIsoDate(value) {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(String(value).trim().slice(0, 10)));
+}
+
+function isDateInFieldPeriod(date, start, end) {
+  if (!isIsoDate(date)) return true;
+  const d = date.trim().slice(0, 10);
+  const hasStart = isIsoDate(start);
+  const hasEnd = isIsoDate(end);
+  if (!hasStart && !hasEnd) return true;
+  if (hasStart && d < start.trim().slice(0, 10)) return false;
+  if (hasEnd && d > end.trim().slice(0, 10)) return false;
+  return true;
+}
+
+function isDateOutsideFieldPeriod(date, answers) {
+  if (!date?.trim()) return false;
+  const startRaw = answers['fecha-inicio'];
+  const endRaw = answers['fecha-fin'];
+  const start = typeof startRaw === 'string' && isIsoDate(startRaw) ? startRaw.trim().slice(0, 10) : undefined;
+  const end = typeof endRaw === 'string' && isIsoDate(endRaw) ? endRaw.trim().slice(0, 10) : undefined;
+  if (!start && !end) return false;
+  return !isDateInFieldPeriod(date, start, end);
+}
+
+const TRACKING_TRASH = /^(test|asdf|xxx+|aaa+|hola|ok|n\/a|na|ninguno|\.+|123+|abc+)$/i;
+
+function validateTrackingHistory(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return { level: 'error' };
+  const lines = trimmed.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (TRACKING_TRASH.test(trimmed) || trimmed.length < 40) {
+    return { level: 'error' };
+  }
+  if (lines.length < 2 && trimmed.length < 80) {
+    return { level: 'error' };
+  }
+  let signals = 0;
+  if (lines.length >= 3) signals++;
+  if (/rastreo|tracking|\bid[\s.:\/]\b|\b[A-Z]{2,}\d{6,}\b/i.test(trimmed)) signals++;
+  if (
+    /lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2}\s+de\s+\w+|[ap]\.\s*m\.|\d{1,2}:\d{2}/i.test(
+      trimmed
+    )
+  ) {
+    signals++;
+  }
+  if (/entregad|reparto|en camino|despach|tr[aá]nsito|paquete|enviado|lleg[oó]|recibid/i.test(trimmed)) {
+    signals++;
+  }
+  if (signals < 2) return { level: 'warn' };
+  return { level: 'ok' };
+}
+
+const periodAnswers = { 'fecha-inicio': '2026-08-01', 'fecha-fin': '2026-08-31' };
+
+if (isDateOutsideFieldPeriod('2026-08-15', periodAnswers) !== false) {
+  console.error('FAIL date inside period should not warn');
+  failed++;
+} else {
+  console.log('OK date inside field period');
+}
+
+if (isDateOutsideFieldPeriod('2026-07-15', periodAnswers) !== true) {
+  console.error('FAIL date before period should warn');
+  failed++;
+} else {
+  console.log('OK date before field period warns');
+}
+
+if (isDateOutsideFieldPeriod('2026-09-01', periodAnswers) !== true) {
+  console.error('FAIL date after period should warn');
+  failed++;
+} else {
+  console.log('OK date after field period warns');
+}
+
+if (isDateOutsideFieldPeriod('2026-01-01', {}) !== false) {
+  console.error('FAIL without period bounds should not warn');
+  failed++;
+} else {
+  console.log('OK no field period bounds');
+}
+
+if (validateTrackingHistory('test').level !== 'error') {
+  console.error('FAIL "test" should be error');
+  failed++;
+} else {
+  console.log('OK C07 trash blocked');
+}
+
+if (
+  validateTrackingHistory(
+    'hola esto es un texto bastante largo pero sin estructura de historial de envio ni fechas ni estados del paquete en absoluto'
+  ).level !== 'warn'
+) {
+  console.error('FAIL weak structure should warn');
+  failed++;
+} else {
+  console.log('OK C07 weak structure warns');
+}
+
+const goodTracking = `Enviado con PASAREX
+ID de rastreo: AMZPSR021029556
+lunes, 2 de febrero
+12:21 p. m.
+Paquete entregado al cliente.
+Medellin, CO`;
+
+if (validateTrackingHistory(goodTracking).level !== 'ok') {
+  console.error('FAIL good tracking should be ok');
+  failed++;
+} else {
+  console.log('OK C07 good tracking');
+}
+
 if (failed > 0) {
   console.error(`\n${failed} failure(s)`);
   process.exit(1);

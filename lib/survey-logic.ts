@@ -334,6 +334,123 @@ export function isTimeInRange(
   return true;
 }
 
+/** ¿El string es una fecha ISO YYYY-MM-DD válida (formato)? */
+function isIsoDate(value: string | undefined | null): value is string {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value.trim().slice(0, 10)));
+}
+
+/** Cotas del período de campo precargadas en el postulante */
+export function getFieldPeriodBounds(
+  answers: Record<string, AnswerValue>
+): { start?: string; end?: string } {
+  const startRaw = answers['fecha-inicio'];
+  const endRaw = answers['fecha-fin'];
+  const start =
+    typeof startRaw === 'string' && isIsoDate(startRaw)
+      ? startRaw.trim().slice(0, 10)
+      : undefined;
+  const end =
+    typeof endRaw === 'string' && isIsoDate(endRaw)
+      ? endRaw.trim().slice(0, 10)
+      : undefined;
+  return { start, end };
+}
+
+/**
+ * ¿La fecha shopper está dentro de [fecha-inicio, fecha-fin]?
+ * Sin cotas configuradas → true (nada contra qué comparar).
+ * Comparación lexicográfica válida para YYYY-MM-DD.
+ */
+export function isDateInFieldPeriod(
+  date: string,
+  start?: string | null,
+  end?: string | null
+): boolean {
+  if (!isIsoDate(date)) return true;
+  const d = date.trim().slice(0, 10);
+  const hasStart = isIsoDate(start ?? undefined);
+  const hasEnd = isIsoDate(end ?? undefined);
+  if (!hasStart && !hasEnd) return true;
+  if (hasStart && d < (start as string).trim().slice(0, 10)) return false;
+  if (hasEnd && d > (end as string).trim().slice(0, 10)) return false;
+  return true;
+}
+
+/** True si hay período y la fecha cae fuera (para warning, no bloquea) */
+export function isDateOutsideFieldPeriod(
+  date: string,
+  answers: Record<string, AnswerValue>
+): boolean {
+  if (!date?.trim()) return false;
+  const { start, end } = getFieldPeriodBounds(answers);
+  if (!start && !end) return false;
+  return !isDateInFieldPeriod(date, start, end);
+}
+
+export type ValidationLevel = 'ok' | 'warn' | 'error';
+
+export interface TrackingHistoryValidation {
+  level: ValidationLevel;
+  /** Clave i18n cuando level !== ok */
+  messageKey?: 'trackingHistoryTooShort' | 'trackingHistoryWeakStructure';
+}
+
+const TRACKING_TRASH =
+  /^(test|asdf|xxx+|aaa+|hola|ok|n\/a|na|ninguno|\.+|123+|abc+)$/i;
+
+/**
+ * Heurística C07: estructura similar al ejemplo de tracking.
+ * error → bloquea avance; warn → aviso, puede seguir; ok → sin mensaje.
+ */
+export function validateTrackingHistory(text: string): TrackingHistoryValidation {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return { level: 'error', messageKey: 'trackingHistoryTooShort' };
+  }
+
+  const lines = trimmed
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  // Basura / demasiado corto: no cuenta como respondida
+  if (TRACKING_TRASH.test(trimmed) || trimmed.length < 40) {
+    return { level: 'error', messageKey: 'trackingHistoryTooShort' };
+  }
+  // Una sola línea corta tampoco; una larga cae al chequeo de estructura (warn)
+  if (lines.length < 2 && trimmed.length < 80) {
+    return { level: 'error', messageKey: 'trackingHistoryTooShort' };
+  }
+
+  // Señales de estructura (al menos 2)
+  let signals = 0;
+  if (lines.length >= 3) signals++;
+  if (
+    /rastreo|tracking|\bid[\s.:\/]\b|\b[A-Z]{2,}\d{6,}\b/i.test(trimmed)
+  ) {
+    signals++;
+  }
+  if (
+    /lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2}\s+de\s+\w+|[ap]\.\s*m\.|\d{1,2}:\d{2}/i.test(
+      trimmed
+    )
+  ) {
+    signals++;
+  }
+  if (
+    /entregad|reparto|en camino|despach|tr[aá]nsito|paquete|enviado|lleg[oó]|recibid/i.test(
+      trimmed
+    )
+  ) {
+    signals++;
+  }
+
+  if (signals < 2) {
+    return { level: 'warn', messageKey: 'trackingHistoryWeakStructure' };
+  }
+  return { level: 'ok' };
+}
+
 /** ¿La pregunta visible tiene respuesta completa y no vacía? */
 export function isQuestionAnswered(
   question: Question,
@@ -374,6 +491,13 @@ export function isQuestionAnswered(
       question.type === 'time' &&
       (question.minTime || question.maxTime) &&
       !isTimeInRange(value, question.minTime, question.maxTime)
+    ) {
+      return false;
+    }
+    // C07: basura / historial trivial no cuenta como respondida
+    if (
+      question.validate === 'trackingHistory' &&
+      validateTrackingHistory(value).level === 'error'
     ) {
       return false;
     }

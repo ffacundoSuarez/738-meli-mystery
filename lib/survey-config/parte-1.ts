@@ -17,7 +17,7 @@ import {
 } from './constants';
 import { naturalDaysBetween, usdFrom } from './computed';
 
-// Parte 1 — cuestionario 31.07 (A + B). IDs internos estables.
+// Parte 1 — cuestionario 03.08 (A + B). IDs internos estables.
 
 export const parte1: SurveySection = {
   id: 'parte-1',
@@ -158,7 +158,7 @@ export const parte1: SurveySection = {
           type: 'single',
           options: ENVIADO_POR,
           required: true,
-          hint: '*Siempre el Marketplace es quien hace el Envío.\n* No confundir con la Transportadora, por la cual se pregunta más adelante (pregunta "F09 ¿Con qué transportadora se envió el paquete?") y es quien realiza el traslado del paquete hacia su destino (puede ser el mismo marketplace, o bien una empresa tercerizada, o bien no identificarse).',
+          hint: '*Siempre el Marketplace es quien hace el Envío.\n* No confundir con la Transportadora, por la cual se pregunta más adelante (pregunta "F09 ¿Con qué transportadora se envió el paquete?") y es quien realiza el traslado del paquete hacia su destino (puede ser el mismo marketplace, o bien una empresa tercerizada, o bien no identificarse).\nEsto hace referencia a productos que no son enviados por el mismo marketplace. Sucede sobre todo en Amazon dónde, por ejemplo, dice “Enviado por”',
         },
         // A16 antes de A13: el PROGRAMADOR de A13 filtra por 1P.
         {
@@ -177,7 +177,7 @@ export const parte1: SurveySection = {
           type: 'single',
           options: VENDIDO_POR,
           required: true,
-          hint: 'Esto hace referencia a productos que no son enviados por el mismo marketplace. Sucede sobre todo en Amazon dónde, por ejemplo, dice “Enviado por”\n*Envía el marketplace pero Vende otro. Fijarse en la leyenda “Vendido por …”.',
+          hint: 'Cuando el producto es 3P vendido por un tercero, la etiqueta dice vendido por: esto se ve mas claro en falabella 1P dice vendido por Falabella 3P dice vendido por xxxx',
         },
         {
           id: 'q14-vendido-por-otro',
@@ -373,7 +373,7 @@ export const parte1: SurveySection = {
             { value: '2', label: '+ lento a + rápido' },
             {
               value: '3',
-              label: 'Ningún orden especifico o Ninguna de las anteriores',
+              label: 'Ningún orden específico o Ninguna de las anteriores',
             },
           ],
           required: true,
