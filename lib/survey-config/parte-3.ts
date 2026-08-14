@@ -7,7 +7,7 @@ import {
   eq,
   evidenciasModule,
 } from './constants';
-import { usdFrom } from './computed';
+import { usdFrom, totalsMatchLabel } from './computed';
 
 // Parte 3 — cuestionario 03.08 (E + F). IDs internos estables.
 // Desviación de fecha eliminada (no figura desde Word 31.07).
@@ -88,7 +88,7 @@ export const parte3: SurveySection = {
           codigoOriginal: 'F02.1',
           text: 'F02.1. Adjunte una evidencia de la fecha y hora de recepción del producto.',
           type: 'evidence',
-          required: false,
+          required: true,
         },
         {
           id: 'q34-entrega-tiempo',
@@ -98,14 +98,6 @@ export const parte3: SurveySection = {
           options: ENTREGA_TIEMPO,
           required: true,
           hint: 'Si el producto tarda 10 días más que su promesa de entrega, dar el caso por cerrado y seleccionar la respuesta "Nunca llegó”',
-        },
-        {
-          id: 'q35-notif-entrega',
-          codigoOriginal: 'F04',
-          text: 'F04. ¿Recibió una notificación que confirma la entrega del producto?',
-          type: 'single',
-          options: SI_NO_NA,
-          required: true,
         },
         {
           id: 'q36-comunicacion-retraso',
@@ -193,14 +185,14 @@ export const parte3: SurveySection = {
           codigoOriginal: 'F10.1',
           text: 'F10.1. Adjunte una foto de la etiqueta del paquete.',
           type: 'evidence',
-          required: false,
+          required: true,
         },
         {
           id: 'q41a-foto-antes',
           codigoOriginal: 'F10.2',
           text: 'F10.2. Adjunte una foto del paquete antes de abrirlo.',
           type: 'evidence',
-          required: false,
+          required: true,
         },
         {
           id: 'q39-producto-estado',
@@ -215,7 +207,7 @@ export const parte3: SurveySection = {
           codigoOriginal: 'F11.1',
           text: 'F11.1. Adjunte una foto del producto después de desembalarlo.',
           type: 'evidence',
-          required: false,
+          required: true,
         },
         {
           id: 'q46-nfe',
@@ -232,7 +224,7 @@ export const parte3: SurveySection = {
           text: 'F12.1. Adjunte una foto o captura del comprobante fiscal.',
           type: 'evidence',
           showIf: eq('q46-nfe', '1'),
-          required: false,
+          required: true,
         },
         {
           id: 'q46b-valor-nfe',
@@ -250,6 +242,7 @@ export const parte3: SurveySection = {
           text: 'F13. ¿Cuál es el importe final total de la compra, incluyendo producto, envío, impuestos y otros cargos?',
           type: 'number',
           required: true,
+          hint: 'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
         },
         {
           id: 'q46c-1-moneda',
@@ -266,6 +259,14 @@ export const parte3: SurveySection = {
           type: 'number',
           required: false,
           computed: usdFrom('q46c-precio-final', 'q46c-1-moneda'),
+        },
+        {
+          id: 'q46c-3-totales-ok',
+          codigoOriginal: 'F13.3',
+          text: 'F13.3. ¿Coinciden producto + envío + impuestos (A11+A20+A21) con el total de la compra (F13)? VARIABLE AUXILIAR AUTOMÁTICA.',
+          type: 'text',
+          required: false,
+          computed: totalsMatchLabel(),
         },
       ],
     },

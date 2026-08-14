@@ -7,6 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { DateTimePicker } from '@/components/survey/DateTimePicker';
 import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory } from '@/lib/survey-logic';
+import {
+  PRICE_AMOUNT_MONEDA,
+  amountUsdPreview,
+  isImplausiblyLowLocalAmount,
+  totalsMatch,
+} from '@/lib/survey-config/computed';
 import { pick } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
 import {
@@ -51,6 +57,7 @@ export function QuestionInput({
     [question, answers, optionSeed]
   );
 
+  const isComputed = Boolean(question.computed);
   const updateValue = (next: AnswerValue) => onChange(question.id, next);
 
   const toggleMultipleChoice = (optionValue: string) => {
@@ -141,8 +148,12 @@ export function QuestionInput({
       <Input
         type="text"
         value={(value as string) || ''}
-        onChange={(e) => updateValue(e.target.value)}
+        onChange={(e) => {
+          if (!isComputed) updateValue(e.target.value);
+        }}
+        readOnly={isComputed}
         placeholder={t('writeAnswer', lang)}
+        className={isComputed ? 'bg-muted/50 text-muted-foreground' : undefined}
       />
     );
   }
@@ -244,20 +255,51 @@ export function QuestionInput({
   }
 
   if (question.type === 'number') {
-    const isComputed = Boolean(question.computed);
+    const monedaId = PRICE_AMOUNT_MONEDA[question.id];
+    const monedaCode = monedaId ? answers[monedaId] : undefined;
+    const preview =
+      !isComputed && monedaId
+        ? amountUsdPreview(value, monedaCode)
+        : null;
+    const tooLow =
+      !isComputed &&
+      isImplausiblyLowLocalAmount(question.id, value, monedaCode);
+    const showTotalsWarn =
+      question.id === 'q46c-precio-final' && totalsMatch(answers) === false;
+
     return (
-      <Input
-        type="number"
-        inputMode="decimal"
-        min={0}
-        value={(value as string) || ''}
-        onChange={(e) => {
-          if (!isComputed) updateValue(e.target.value);
-        }}
-        readOnly={isComputed}
-        placeholder={t('writeAnswer', lang)}
-        className={isComputed ? 'bg-muted/50 text-muted-foreground' : undefined}
-      />
+      <div className="space-y-1.5">
+        <Input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          value={(value as string) || ''}
+          onChange={(e) => {
+            if (!isComputed) updateValue(e.target.value);
+          }}
+          readOnly={isComputed}
+          placeholder={t('writeAnswer', lang)}
+          className={isComputed ? 'bg-muted/50 text-muted-foreground' : undefined}
+        />
+        {preview && (
+          <p className="text-sm text-muted-foreground">
+            {t('amountUsdPreview', lang)
+              .replace('{amount}', String(preview.amount))
+              .replace('{moneda}', preview.moneda)
+              .replace('{usd}', preview.usd.toFixed(2))}
+          </p>
+        )}
+        {tooLow && (
+          <p className="text-sm text-amber-600 dark:text-amber-500">
+            {t('amountTooLow', lang)}
+          </p>
+        )}
+        {showTotalsWarn && (
+          <p className="text-sm text-amber-600 dark:text-amber-500">
+            {t('totalsMismatch', lang)}
+          </p>
+        )}
+      </div>
     );
   }
 
@@ -388,14 +430,31 @@ export function QuestionInput({
               className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30"
             >
               <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-              <a
-                href={file.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 text-sm truncate hover:underline"
-              >
-                {file.name}
-              </a>
+              <div className="flex-1 min-w-0 space-y-1">
+                <a
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-sm truncate hover:underline"
+                >
+                  {file.name}
+                </a>
+                {file.validation?.status === 'invalid' && (
+                  <p className="text-xs text-destructive">
+                    {file.validation.reason || t('evidenceInvalid', lang)}
+                  </p>
+                )}
+                {file.validation?.status === 'doubt' && (
+                  <p className="text-xs text-amber-600 dark:text-amber-500">
+                    {file.validation.reason || t('evidenceDoubt', lang)}
+                  </p>
+                )}
+                {file.validation?.status === 'ok' && (
+                  <p className="text-xs text-green-700 dark:text-green-500">
+                    Evidencia OK
+                  </p>
+                )}
+              </div>
               {onRemoveEvidence && (
                 <button
                   type="button"
