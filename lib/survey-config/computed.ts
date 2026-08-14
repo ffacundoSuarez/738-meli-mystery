@@ -7,12 +7,150 @@ import { toUsd } from './fx';
 // (applyComputedAnswers) evalúa y mergea en answers antes de persistir.
 // ============================================================
 
-/** Parsea un valor de answers como número; vacío/no numérico → null. */
-function parseAmount(raw: AnswerValue | undefined): number | null {
+/** IDs de monto de precio → id de moneda asociada (para preview / avisos). */
+export const PRICE_AMOUNT_MONEDA: Record<string, string> = {
+  'q12-precio': 'q12-1-moneda',
+  'q19-precio-envio': 'q19-1-moneda-envio',
+  'q19a-precio-impuestos': 'q19a-1-moneda-impuestos',
+  'q46c-precio-final': 'q46c-1-moneda',
+};
+
+/** Montos donde un valor bajo en CLP/COP suele indicar error de separador de miles. */
+export const PRICE_LOW_AMOUNT_WARN_IDS = new Set([
+  'q12-precio',
+  'q46c-precio-final',
+]);
+
+const LOW_LOCAL_AMOUNT_THRESHOLD = 1000;
+
+/**
+ * Parsea montos con separadores de miles/decimales (CL/CO o estilo US).
+ * Heurística: 3 dígitos tras el último separador → miles; 1–2 → decimal.
+ */
+export function parseAmount(raw: AnswerValue | undefined): number | null {
   if (raw === undefined || raw === null || raw === '') return null;
   if (typeof raw !== 'string' && typeof raw !== 'number') return null;
-  const n = Number(String(raw).trim());
+
+  let s = String(raw).trim();
+  if (!s) return null;
+
+  // Quitar símbolos de moneda y espacios (incl. NBSP)
+  s = s.replace(/[$€£]|USD|CLP|COP|pesos?/gi, '').replace(/\s/g, '');
+  if (!s) return null;
+
+  const lastDot = s.lastIndexOf('.');
+  const lastComma = s.lastIndexOf(',');
+  const lastSep = Math.max(lastDot, lastComma);
+
+  // Miles con un solo separador + exactamente 3 dígitos: 87.000 / 87,000
+  // (antes de Number(), porque Number("87.000") === 87)
+  if (lastSep > 0) {
+    const after = s.slice(lastSep + 1);
+    const before = s.slice(0, lastSep);
+    if (
+      /^\d{3}$/.test(after) &&
+      !before.includes('.') &&
+      !before.includes(',') &&
+      /^\d+$/.test(before)
+    ) {
+      const n = Number(before + after);
+      return Number.isFinite(n) ? n : null;
+    }
+  }
+
+  // Solo dígitos o decimal simple con punto (sin coma)
+  if (/^\d+(\.\d{1,2})?$/.test(s) && !s.includes(',')) {
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  if (lastSep === -1) {
+    // Solo dígitos (ya cubierto) o basura
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  const after = s.slice(lastSep + 1);
+  const before = s.slice(0, lastSep);
+  const sep = s[lastSep];
+
+  // Varios grupos de miles: 1.234.567 o 1,234,567
+  if (
+    (sep === '.' && /^\d{1,3}(\.\d{3})+$/.test(s)) ||
+    (sep === ',' && /^\d{1,3}(,\d{3})+$/.test(s))
+  ) {
+    const n = Number(s.replace(/[.,]/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  // Decimal: 87,50 o 87.5 (1–2 dígitos tras el separador)
+  if (/^\d{1,2}$/.test(after)) {
+    const intPart = before.replace(/[.,]/g, '');
+    const n = Number(`${intPart}.${after}`);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  // 1.234,56 (CL/CO) o 1,234.56 (US)
+  if (lastDot > lastComma && lastComma >= 0) {
+    // US: coma miles, punto decimal
+    const n = Number(s.replace(/,/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }
+  if (lastComma > lastDot && lastDot >= 0) {
+    // CL/CO: punto miles, coma decimal
+    const n = Number(s.replace(/\./g, '').replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  const n = Number(s.replace(/,/g, ''));
   return Number.isFinite(n) ? n : null;
+}
+
+/** Etiqueta corta de moneda para el preview. */
+export function monedaLabel(monedaCode: string | undefined): string {
+  switch (monedaCode) {
+    case '1':
+      return 'CLP';
+    case '2':
+      return 'COP';
+    case '3':
+      return 'USD';
+    default:
+      return '';
+  }
+}
+
+/**
+ * Preview de conversión para UI: monto interpretado + USD.
+ * Null si falta monto o moneda.
+ */
+export function amountUsdPreview(
+  amountRaw: AnswerValue | undefined,
+  monedaCode: AnswerValue | undefined
+): { amount: number; usd: number; moneda: string } | null {
+  const amount = parseAmount(amountRaw);
+  if (amount === null) return null;
+  if (typeof monedaCode !== 'string' || monedaCode === '') return null;
+  const usd = toUsd(amount, monedaCode);
+  if (usd === null) return null;
+  return { amount, usd, moneda: monedaLabel(monedaCode) };
+}
+
+/**
+ * True si el monto en CLP/COP parece demasiado bajo (posible error de miles).
+ * No aplica a envío/impuestos (0 es válido) ni a USD.
+ */
+export function isImplausiblyLowLocalAmount(
+  amountId: string,
+  amountRaw: AnswerValue | undefined,
+  monedaCode: AnswerValue | undefined
+): boolean {
+  if (!PRICE_LOW_AMOUNT_WARN_IDS.has(amountId)) return false;
+  if (monedaCode !== '1' && monedaCode !== '2') return false;
+  const amount = parseAmount(amountRaw);
+  if (amount === null) return false;
+  // 0 puede ser edge case; avisar solo si hay un valor positivo pero muy bajo
+  return amount > 0 && amount < LOW_LOCAL_AMOUNT_THRESHOLD;
 }
 
 /**
@@ -30,6 +168,47 @@ export function usdFrom(amountId: string, monedaId: string) {
     const usd = toUsd(amount, moneda);
     if (usd === null) return '';
     return usd.toFixed(2);
+  };
+}
+
+const PRODUCT_USD = 'q12a-precio-usd';
+const SHIPPING_USD = 'q19-2-precio-envio-usd';
+const TAX_USD = 'q19b-impuestos-usd';
+const TOTAL_USD = 'q46c-2-precio-usd';
+
+/**
+ * Compara A11.2 + A20.2 + A21.2 vs F13.2 en USD.
+ * Tolerancia: max($1, 2% del total F13.2).
+ */
+export function totalsMatch(
+  answers: Record<string, AnswerValue>
+): boolean | null {
+  const product = parseAmount(answers[PRODUCT_USD]);
+  const shipping = parseAmount(answers[SHIPPING_USD]);
+  const tax = parseAmount(answers[TAX_USD]);
+  const total = parseAmount(answers[TOTAL_USD]);
+  if (
+    product === null ||
+    shipping === null ||
+    tax === null ||
+    total === null
+  ) {
+    return null;
+  }
+  const sum = product + shipping + tax;
+  const tolerance = Math.max(1, Math.abs(total) * 0.02);
+  return Math.abs(sum - total) <= tolerance;
+}
+
+/**
+ * Campo computado F13.3: VERDADERO / FALSO si cierran los totales en USD.
+ * Vacío si faltan datos.
+ */
+export function totalsMatchLabel() {
+  return (answers: Record<string, AnswerValue>): AnswerValue => {
+    const match = totalsMatch(answers);
+    if (match === null) return '';
+    return match ? 'VERDADERO' : 'FALSO';
   };
 }
 

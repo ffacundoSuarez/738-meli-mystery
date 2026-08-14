@@ -27,6 +27,7 @@ import { formatQuestionText, interpolate, pick } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
 import { AnswerValue, EvidenceFile, Lang, Question, ReviewFlagsMap, StageStatus, StagesMap, SurveyModule } from '@/lib/types';
 import { getResponseByToken, saveStageByToken, uploadEvidence } from '@/lib/data';
+import { validateEvidenceFile } from '@/lib/evidence-validation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -273,12 +274,39 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     setUploading((p) => ({ ...p, [questionId]: true }));
     try {
       const uploaded: EvidenceFile[] = [];
+      const question =
+        getAllQuestions(surveySections).find((q) => q.id === questionId) ||
+        null;
+      const skipVision =
+        questionId.startsWith('evidencia-parte-') || !question;
+
       for (const file of Array.from(files)) {
-        uploaded.push(
-          await uploadEvidence(responseId, questionId, file, (pct) =>
-            setUploadProgress((p) => ({ ...p, [questionId]: pct }))
-          )
+        const uploadedFile = await uploadEvidence(
+          responseId,
+          questionId,
+          file,
+          (pct) => setUploadProgress((p) => ({ ...p, [questionId]: pct }))
         );
+
+        if (!skipVision && question && file.type.startsWith('image/')) {
+          const validation = await validateEvidenceFile(uploadedFile, question);
+          uploadedFile.validation = validation;
+          if (validation.status === 'invalid') {
+            toast.warning(
+              validation.reason && validation.reason !== 'validation_unavailable'
+                ? validation.reason
+                : t('evidenceInvalid', lang)
+            );
+          } else if (validation.status === 'doubt') {
+            toast.warning(
+              validation.reason && validation.reason !== 'validation_unavailable'
+                ? validation.reason
+                : t('evidenceDoubt', lang)
+            );
+          }
+        }
+
+        uploaded.push(uploadedFile);
       }
       const current = (answers[questionId] as EvidenceFile[]) || [];
       updateAnswer(questionId, [...current, ...uploaded]);

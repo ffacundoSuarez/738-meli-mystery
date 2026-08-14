@@ -134,6 +134,7 @@ export const parte1: SurveySection = {
           text: 'A11. ¿Cuál es el precio publicado del producto, sin incluir envío ni impuestos?',
           type: 'number',
           required: true,
+          hint: 'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
         },
         {
           id: 'q12-1-moneda',
@@ -217,7 +218,7 @@ export const parte1: SurveySection = {
           codigoOriginal: 'A17',
           text: 'A17. Adjunte una captura de la publicación del producto en el sitio.',
           type: 'evidence',
-          required: false,
+          required: true,
           hint: 'La captura debe mostrar la pantalla completa e incluir, como mínimo, el título del producto y el precio.',
         },
         {
@@ -232,7 +233,7 @@ export const parte1: SurveySection = {
           codigoOriginal: 'A18.1',
           text: 'A18.1. Adjunte una captura de pantalla de todas las opciones de envío disponibles.',
           type: 'evidence',
-          required: false,
+          required: true,
         },
         {
           id: 'q18c-metodo-entrega',
@@ -248,7 +249,7 @@ export const parte1: SurveySection = {
           codigoOriginal: 'A19.1',
           text: 'A19.1. Adjunte una captura de pantalla de la opción de envío seleccionada.',
           type: 'evidence',
-          required: false,
+          required: true,
           hint: 'Asegúrese de que la captura muestre todos los métodos disponibles, la promesa de entrega y el costo asociado a cada uno.',
         },
         {
@@ -257,6 +258,7 @@ export const parte1: SurveySection = {
           text: 'A20. ¿Cuál es el costo del envío? Si es gratuito, ingrese 0.',
           type: 'number',
           required: true,
+          hint: 'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
         },
         {
           id: 'q19-1-moneda-envio',
@@ -280,6 +282,7 @@ export const parte1: SurveySection = {
           text: 'A21. ¿Cuál es el importe total de impuestos, tasas de importación o aranceles? Si no corresponde ninguno, ingrese 0.',
           type: 'number',
           required: true,
+          hint: 'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
         },
         {
           id: 'q19a-1-moneda-impuestos',
@@ -383,7 +386,7 @@ export const parte1: SurveySection = {
           codigoOriginal: 'B06',
           text: 'B06. Adjunte una captura de pantalla en la que se vean todas las opciones de entrega, sus fechas u horarios prometidos.',
           type: 'evidence',
-          required: false,
+          required: true,
         },
         {
           id: 'q25a-fecha-prevista',

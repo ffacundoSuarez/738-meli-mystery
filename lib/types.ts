@@ -142,10 +142,19 @@ export interface ReviewFlag {
 
 export type ReviewFlagsMap = Record<string, ReviewFlag>;
 
+export interface EvidenceValidation {
+  status: 'ok' | 'doubt' | 'invalid';
+  confidence: number;
+  reason: string;
+  detectedLabel?: string;
+}
+
 export interface EvidenceFile {
   url: string;
   name: string;
   type: string;
+  /** Resultado de validación Vision (opcional; soft warning) */
+  validation?: EvidenceValidation;
 }
 
 /** Respuesta de matriz: filaId -> valor de columna */

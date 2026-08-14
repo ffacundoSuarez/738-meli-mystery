@@ -44,6 +44,21 @@ select public.meli_admin_update_passcode('CAMBIAR_ESTE_PASSCODE', 'tu-passcode-r
 - **Las respuestas viven en un único `jsonb`** (`answers`), indexado por ID de pregunta.
   El estado del proceso vive en `stages` (una entrada por parte revisable).
 
+### Validación Vision de evidencias (opcional)
+
+El BFF `POST /api/evidencia/validar` llama al Express en Lightsail
+(`POST /meli/validate-evidence`). Variables en Vercel / `.env.local`:
+
+| Variable | Descripción |
+|---|---|
+| `LIGHTSAIL_EVIDENCE_URL` | Base URL del servicio (ej. `http://x.x.x.x:3000`) |
+| `MELI_SERVICE_KEY` | Secret compartido (mismo valor en Lightsail) |
+
+En Lightsail (`.env` del server): `MELI_SERVICE_KEY`, opcional `MELI_VISION_MODEL`
+(default `gpt-4o`). Requiere `OPENAI_API_KEY` (ya existente).
+
+Si faltan las variables, el upload sigue funcionando (fail-soft → `doubt`).
+
 ## Estructura
 
 | Ruta | Qué es |

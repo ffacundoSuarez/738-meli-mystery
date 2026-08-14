@@ -10,7 +10,7 @@ import {
 } from '@/lib/data';
 import { PAISES } from '@/lib/survey-config/constants';
 import { getPartProgressLabel, getScreeningSnapshot } from '@/lib/survey-snapshot';
-import { Lang, SurveyResponse } from '@/lib/types';
+import { SurveyResponse } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,7 +65,6 @@ export default function PostulantesPage() {
   const [creating, setCreating] = useState(false);
   const [nombreApellido, setNombreApellido] = useState('');
   const [pais, setPais] = useState('');
-  const [idioma, setIdioma] = useState<Lang>('es');
   const [reclutador, setReclutador] = useState('');
   const [ola, setOla] = useState('');
   const [isPrueba, setIsPrueba] = useState(false);
@@ -117,7 +116,6 @@ export default function PostulantesPage() {
   const resetCreateForm = () => {
     setNombreApellido('');
     setPais('');
-    setIdioma('es');
     setReclutador('');
     setOla('');
     setIsPrueba(false);
@@ -137,7 +135,7 @@ export default function PostulantesPage() {
       const created = await adminCreatePostulante(
         nombreApellido.trim(),
         pais,
-        idioma,
+        'es',
         reclutador.trim() || undefined,
         isPrueba,
         ola.trim() || undefined
@@ -533,18 +531,6 @@ export default function PostulantesPage() {
                 La región (ej. AMBA) aparecerá en la tabla cuando el encuestado la complete en el cuestionario.
               </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="idioma">Idioma del cuestionario</Label>
-              <Select value={idioma} onValueChange={(v) => setIdioma(v as Lang)}>
-                <SelectTrigger id="idioma">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="pt">Português (Portugal)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
               <div className="space-y-2">
                 <Label htmlFor="reclutador">Reclutador</Label>
                 <Input
@@ -603,7 +589,7 @@ export default function PostulantesPage() {
             <DialogTitle>Editar datos</DialogTitle>
             <DialogDescription>
               Actualizá el nombre y el reclutador de{' '}
-              <strong>{editTarget?.code || editTarget?.id}</strong>. País, idioma y tipo
+              <strong>{editTarget?.code || editTarget?.id}</strong>. País y tipo
               (prueba) no se pueden cambiar para no romper el ID.
             </DialogDescription>
           </DialogHeader>

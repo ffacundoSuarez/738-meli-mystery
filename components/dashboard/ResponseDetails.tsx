@@ -38,8 +38,11 @@ import {
   getVisibleMatrixRows,
   getVisibleQuestions,
   isModuleVisible,
+  applyComputedAnswers,
+  getAllQuestions,
 } from '@/lib/survey-logic';
 import { uploadEvidence } from '@/lib/data';
+import { validateEvidenceFile } from '@/lib/evidence-validation';
 import {
   AnswerValue,
   EvidenceFile,
@@ -120,16 +123,50 @@ function renderAnswerCell(
     return (
       <div className="space-y-2">
         {answer.map((file) => (
-          <a
-            key={file.url}
-            href={file.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-foreground hover:underline"
-          >
-            <FileText className="w-4 h-4 shrink-0" />
-            <span className="truncate font-bold">{file.name}</span>
-          </a>
+          <div key={file.url} className="space-y-1">
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-foreground hover:underline"
+            >
+              <FileText className="w-4 h-4 shrink-0" />
+              <span className="truncate font-bold">{file.name}</span>
+            </a>
+            {file.validation?.status === 'ok' && (
+              <Badge
+                variant="outline"
+                className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
+              >
+                IA: OK
+              </Badge>
+            )}
+            {file.validation?.status === 'doubt' && (
+              <Badge
+                variant="outline"
+                className="text-[10px] py-0 h-5 bg-amber-50 text-amber-800 border-amber-200"
+                title={file.validation.reason}
+              >
+                IA: Dudosa
+              </Badge>
+            )}
+            {file.validation?.status === 'invalid' && (
+              <Badge
+                variant="outline"
+                className="text-[10px] py-0 h-5 bg-red-50 text-red-800 border-red-200"
+                title={file.validation.reason}
+              >
+                IA: Inválida
+              </Badge>
+            )}
+            {(file.validation?.status === 'doubt' ||
+              file.validation?.status === 'invalid') &&
+              file.validation.reason && (
+                <p className="text-xs text-muted-foreground">
+                  {file.validation.reason}
+                </p>
+              )}
+          </div>
         ))}
       </div>
     );
@@ -299,7 +336,10 @@ export function ResponseDetails({
   }, [response]);
 
   const updateEditedAnswer = useCallback((questionId: string, value: AnswerValue) => {
-    setEditedAnswers((prev) => ({ ...prev, [questionId]: value }));
+    setEditedAnswers((prev) => {
+      const next = { ...prev, [questionId]: value };
+      return applyComputedAnswers(getAllQuestions(surveySections), next);
+    });
   }, []);
 
   const toggleEditing = (questionId: string, editing: boolean) => {
@@ -318,7 +358,7 @@ export function ResponseDetails({
       const next = { ...prev };
       if (saved !== undefined) next[questionId] = saved;
       else delete next[questionId];
-      return next;
+      return applyComputedAnswers(getAllQuestions(surveySections), next);
     });
     toggleEditing(questionId, false);
   };
@@ -328,12 +368,28 @@ export function ResponseDetails({
     setUploading((p) => ({ ...p, [questionId]: true }));
     try {
       const uploaded: EvidenceFile[] = [];
+      const question =
+        getAllQuestions(surveySections).find((q) => q.id === questionId) ||
+        null;
+      const skipVision =
+        questionId.startsWith('evidencia-parte-') || !question;
+
       for (const file of Array.from(files)) {
-        uploaded.push(
-          await uploadEvidence(response.id, questionId, file, (pct) =>
-            setUploadProgress((p) => ({ ...p, [questionId]: pct }))
-          )
+        const uploadedFile = await uploadEvidence(
+          response.id,
+          questionId,
+          file,
+          (pct) => setUploadProgress((p) => ({ ...p, [questionId]: pct }))
         );
+
+        if (!skipVision && question && file.type.startsWith('image/')) {
+          uploadedFile.validation = await validateEvidenceFile(
+            uploadedFile,
+            question
+          );
+        }
+
+        uploaded.push(uploadedFile);
       }
       const current = (editedAnswers[questionId] as EvidenceFile[]) || [];
       updateEditedAnswer(questionId, [...current, ...uploaded]);
@@ -493,6 +549,24 @@ export function ResponseDetails({
                       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         Respuesta
                       </span>
+                      {question.id === 'q46c-3-totales-ok' &&
+                        activeAnswers[question.id] === 'VERDADERO' && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
+                          >
+                            Totales OK
+                          </Badge>
+                        )}
+                      {question.id === 'q46c-3-totales-ok' &&
+                        activeAnswers[question.id] === 'FALSO' && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] py-0 h-5 bg-red-50 text-red-800 border-red-200"
+                          >
+                            Totales no cierran
+                          </Badge>
+                        )}
                       {questionChanged && (
                         <Badge
                           variant="outline"

@@ -65,6 +65,26 @@ const UI: Record<string, Record<Lang, string>> = {
     es: 'La fecha parece estar fuera del período de campo ({start} – {end}). Verifique que sea correcta.',
     pt: 'A data parece estar fora do período de campo ({start} – {end}). Verifique se está correta.',
   },
+  amountUsdPreview: {
+    es: 'Se interpretó como {amount} {moneda} → USD {usd}',
+    pt: 'Interpretado como {amount} {moneda} → USD {usd}',
+  },
+  amountTooLow: {
+    es: 'El importe parece demasiado bajo. ¿Olvidaste ceros o usaste separador de miles? Escribí el número sin puntos ni comas (ej. 87000).',
+    pt: 'O valor parece demasiado baixo. Esqueceu zeros ou usou separador de milhares? Escreva o número sem pontos nem vírgulas (ex. 87000).',
+  },
+  totalsMismatch: {
+    es: 'La suma de producto + envío + impuestos no coincide con el total de la compra (tolerancia aplicada). Revisá los montos.',
+    pt: 'A soma de produto + envio + impostos não coincide com o total da compra. Verifique os valores.',
+  },
+  evidenceInvalid: {
+    es: 'La foto no parece coincidir con lo pedido. Podés dejarla o subir otra.',
+    pt: 'A foto não parece corresponder ao pedido. Pode mantê-la ou enviar outra.',
+  },
+  evidenceDoubt: {
+    es: 'No estamos seguros de que la foto coincida con lo pedido. Revisala si podés.',
+    pt: 'Não temos a certeza de que a foto corresponda ao pedido. Verifique se puder.',
+  },
   trackingHistoryTooShort: {
     es: 'Pegue el historial completo del tracking (varias líneas con fechas/estados), no un texto de prueba.',
     pt: 'Cole o histórico completo do tracking (várias linhas com datas/estados), não um texto de teste.',
