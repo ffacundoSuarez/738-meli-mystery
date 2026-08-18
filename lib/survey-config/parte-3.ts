@@ -268,6 +268,34 @@ export const parte3: SurveySection = {
           required: false,
           computed: totalsMatchLabel(),
         },
+        {
+          id: 'q31q4-recorrido',
+          codigoOriginal: 'C07',
+          text: 'C07. Copie en formato TEXTO el historial completo del recorrido del pedido, desde la aprobación de la compra hasta la entrega.',
+          type: 'longtext',
+          required: true,
+          validate: 'trackingHistory',
+          hint: `Ejemplo:
+Enviado con PASAREX
+ID de rastreo: AMZPSR021029556
+Estás viendo la misma información sobre el estado del pedido a la que pueden acceder nuestros agentes del Servicio de atención al cliente.
+lunes, 2 de febrero
+12:21 p. m.
+Paquete entregado al cliente.
+Medellin, CO
+10:23 a. m.
+Paquete en reparto.
+Medellin, CO`,
+        },
+        {
+          id: 'q31q3-tracking',
+          codigoOriginal: 'C06',
+          text: 'C06. ¿Recibiste acceso a un seguimiento de la entrega en tiempo real mediante un mapa o una actualización minuto a minuto (tracking real time)?',
+          type: 'single',
+          options: SI_NO_COD,
+          required: true,
+          hint: 'ACLARACIÓN: Debe ser con mapa o tracking de minuto a minuto en formato Real time. No aplica si es solo el paso a paso en formato de puntos/listado. Necesariamente es el seguimiento por mapeo del producto o por tiempo real.\nResponda “Sí” solo cuando la información enviada por el marketplace o la transportadora incluye un mapa GPS que permite visualizar en tiempo real el recorrido del paquete.',
+        },
       ],
     },
     evidenciasModule(3),

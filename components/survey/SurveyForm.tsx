@@ -197,7 +197,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         if (existing) {
           const ans = existing.answers || {};
           const flags = existing.reviewFlags || {};
-          setAnswers(ans);
+          setAnswers(
+            applyComputedAnswers(getAllQuestions(surveySections), ans)
+          );
           setStages(existing.stages || {});
           setReviewFlags(flags);
           setResponseId(existing.id);

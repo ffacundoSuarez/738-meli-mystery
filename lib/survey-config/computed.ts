@@ -10,6 +10,7 @@ import { toUsd } from './fx';
 /** IDs de monto de precio → id de moneda asociada (para preview / avisos). */
 export const PRICE_AMOUNT_MONEDA: Record<string, string> = {
   'q12-precio': 'q12-1-moneda',
+  'q12b-precio-a11b': 'q12-1-moneda',
   'q19-precio-envio': 'q19-1-moneda-envio',
   'q19a-precio-impuestos': 'q19a-1-moneda-impuestos',
   'q46c-precio-final': 'q46c-1-moneda',
@@ -18,6 +19,7 @@ export const PRICE_AMOUNT_MONEDA: Record<string, string> = {
 /** Montos donde un valor bajo en CLP/COP suele indicar error de separador de miles. */
 export const PRICE_LOW_AMOUNT_WARN_IDS = new Set([
   'q12-precio',
+  'q12b-precio-a11b',
   'q46c-precio-final',
 ]);
 
@@ -172,18 +174,38 @@ export function usdFrom(amountId: string, monedaId: string) {
 }
 
 const PRODUCT_USD = 'q12a-precio-usd';
+const PRODUCT_A11B = 'q12b-precio-a11b';
+const PRODUCT_MONEDA = 'q12-1-moneda';
 const SHIPPING_USD = 'q19-2-precio-envio-usd';
 const TAX_USD = 'q19b-impuestos-usd';
 const TOTAL_USD = 'q46c-2-precio-usd';
 
 /**
- * Compara A11.2 + A20.2 + A21.2 vs F13.2 en USD.
+ * USD del producto para F13.3: si hay A11B, reemplaza A11 (misma moneda A11.1).
+ * `0` cuenta como respondida.
+ */
+export function productUsdForTotals(
+  answers: Record<string, AnswerValue>
+): number | null {
+  const a11b = parseAmount(answers[PRODUCT_A11B]);
+  if (a11b !== null) {
+    const moneda = answers[PRODUCT_MONEDA];
+    if (typeof moneda === 'string' && moneda !== '') {
+      const usd = toUsd(a11b, moneda);
+      if (usd !== null) return usd;
+    }
+  }
+  return parseAmount(answers[PRODUCT_USD]);
+}
+
+/**
+ * Compara (A11.2 o A11B) + A20.2 + A21.2 vs F13.2 en USD.
  * Tolerancia: max($1, 2% del total F13.2).
  */
 export function totalsMatch(
   answers: Record<string, AnswerValue>
 ): boolean | null {
-  const product = parseAmount(answers[PRODUCT_USD]);
+  const product = productUsdForTotals(answers);
   const shipping = parseAmount(answers[SHIPPING_USD]);
   const tax = parseAmount(answers[TAX_USD]);
   const total = parseAmount(answers[TOTAL_USD]);
