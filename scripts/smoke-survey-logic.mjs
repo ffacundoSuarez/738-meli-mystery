@@ -143,6 +143,133 @@ if (evaluateCondition(d01Gate, { 'q-d00-cambio-fecha': '2' }) !== false) {
   console.log('OK D00=2 hides D01');
 }
 
+// D03–D04 solo si D02 = 1
+const d02Gate = { questionId: 'q55-1-contactar-vendedor', values: ['1'] };
+const d031 = {
+  all: [
+    { questionId: 'q55-1-contactar-vendedor', values: ['1'] },
+    { questionId: 'q55a-facilidad', operator: 'gte', values: ['0'] },
+    { questionId: 'q55a-facilidad', operator: 'lte', values: ['6'] },
+  ],
+};
+if (evaluateCondition(d02Gate, { 'q55-1-contactar-vendedor': '1' }) !== true) {
+  console.error('FAIL D02=1 should show D03');
+  failed++;
+} else {
+  console.log('OK D02=1 shows D03');
+}
+if (evaluateCondition(d02Gate, { 'q55-1-contactar-vendedor': '2' }) !== false) {
+  console.error('FAIL D02=2 should hide D03');
+  failed++;
+} else {
+  console.log('OK D02=2 hides D03');
+}
+if (
+  evaluateCondition(d031, {
+    'q55-1-contactar-vendedor': '1',
+    'q55a-facilidad': '4',
+  }) !== true
+) {
+  console.error('FAIL D02=1 score 4 should show D03.1');
+  failed++;
+} else {
+  console.log('OK D02=1 score 4 shows D03.1');
+}
+if (
+  evaluateCondition(d031, {
+    'q55-1-contactar-vendedor': '2',
+    'q55a-facilidad': '4',
+  }) !== false
+) {
+  console.error('FAIL D02=2 should hide D03.1 even with score');
+  failed++;
+} else {
+  console.log('OK D02=2 hides D03.1');
+}
+
+// A11.B solo si A11.1 = dólares (código 3); reemplaza A11 en F13.3
+const a11bGate = { questionId: 'q12-1-moneda', values: ['3'] };
+if (evaluateCondition(a11bGate, { 'q12-1-moneda': '3' }) !== true) {
+  console.error('FAIL A11.1=USD should show A11.B');
+  failed++;
+} else {
+  console.log('OK A11.1=USD shows A11.B');
+}
+if (evaluateCondition(a11bGate, { 'q12-1-moneda': '1' }) !== false) {
+  console.error('FAIL A11.1=CLP should hide A11.B');
+  failed++;
+} else {
+  console.log('OK A11.1=CLP hides A11.B');
+}
+
+function pickProductSource(answers) {
+  if (answers['q12-1-moneda'] !== '3') return 'a11';
+  const raw = answers['q12b-precio-a11b'];
+  if (raw !== undefined && raw !== null && String(raw).trim() !== '') {
+    return 'a11b';
+  }
+  return 'a11';
+}
+if (
+  pickProductSource({
+    'q12-1-moneda': '3',
+    'q12b-precio-a11b': '100',
+  }) !== 'a11b'
+) {
+  console.error('FAIL A11.B answered should replace A11');
+  failed++;
+} else {
+  console.log('OK A11.B replaces A11');
+}
+if (
+  pickProductSource({ 'q12-1-moneda': '3', 'q12b-precio-a11b': '0' }) !==
+  'a11b'
+) {
+  console.error('FAIL A11.B=0 should replace A11');
+  failed++;
+} else {
+  console.log('OK A11.B=0 replaces A11');
+}
+if (
+  pickProductSource({ 'q12-1-moneda': '1', 'q12b-precio-a11b': '100' }) !==
+  'a11'
+) {
+  console.error('FAIL A11.B leftover should not replace when not USD');
+  failed++;
+} else {
+  console.log('OK A11.B ignored unless A11.1 is USD');
+}
+
+// D08 evidencia no required: vacía no bloquea
+function evidenceAnswered(required, value) {
+  if (!required) return true;
+  return Array.isArray(value) && value.length > 0;
+}
+if (evidenceAnswered(false, undefined) !== true) {
+  console.error('FAIL optional evidence empty should pass');
+  failed++;
+} else {
+  console.log('OK D08 empty does not block');
+}
+if (evidenceAnswered(true, undefined) !== false) {
+  console.error('FAIL required evidence empty should block');
+  failed++;
+} else {
+  console.log('OK required evidence empty blocks');
+}
+
+// A11B opcional: vacío no bloquea
+function optionalNumberAnswered(required, value) {
+  if (required === false && (value === undefined || value === '')) return true;
+  return value !== undefined && String(value).trim() !== '';
+}
+if (optionalNumberAnswered(false, '') !== true) {
+  console.error('FAIL optional A11B empty should pass');
+  failed++;
+} else {
+  console.log('OK A11B empty does not block');
+}
+
 // --- Validaciones Maia: período de campo + historial C07 -------------------
 
 function isIsoDate(value) {

@@ -87,6 +87,8 @@ export interface Question {
   validate?: 'trackingHistory';
   matrixRows?: MatrixRow[];
   matrixColumns?: QuestionOption[];
+  /** Precarga si el campo está vacío; no pisa una respuesta ya guardada */
+  defaultValue?: AnswerValue;
   /** Valor derivado; se mergea en answers antes de persistir */
   computed?: (answers: Record<string, AnswerValue>) => AnswerValue;
 }

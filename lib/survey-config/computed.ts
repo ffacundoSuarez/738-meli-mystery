@@ -15,9 +15,30 @@ export const PRICE_AMOUNT_MONEDA: Record<string, string> = {
   'q46c-precio-final': 'q46c-1-moneda',
 };
 
+/** A11.B se expresa en moneda local del país (CLP/COP), no en A11.1. */
+const A11B_AMOUNT_ID = 'q12b-precio-a11b';
+
+/**
+ * Código de moneda (1=CLP, 2=COP, 3=USD) para preview / avisos de un monto.
+ * A11.B usa el país; el resto usa la pregunta de moneda asociada.
+ */
+export function monedaCodeForAmount(
+  amountId: string,
+  answers: Record<string, AnswerValue>
+): string | undefined {
+  if (amountId === A11B_AMOUNT_ID) {
+    const pais = answers['f1-pais'];
+    return pais === '1' || pais === '2' ? pais : undefined;
+  }
+  const monedaId = PRICE_AMOUNT_MONEDA[amountId];
+  const code = monedaId ? answers[monedaId] : undefined;
+  return typeof code === 'string' && code !== '' ? code : undefined;
+}
+
 /** Montos donde un valor bajo en CLP/COP suele indicar error de separador de miles. */
 export const PRICE_LOW_AMOUNT_WARN_IDS = new Set([
   'q12-precio',
+  'q12b-precio-a11b',
   'q46c-precio-final',
 ]);
 
@@ -172,18 +193,40 @@ export function usdFrom(amountId: string, monedaId: string) {
 }
 
 const PRODUCT_USD = 'q12a-precio-usd';
+const PRODUCT_A11B = 'q12b-precio-a11b';
+const PRODUCT_MONEDA = 'q12-1-moneda';
 const SHIPPING_USD = 'q19-2-precio-envio-usd';
 const TAX_USD = 'q19b-impuestos-usd';
 const TOTAL_USD = 'q46c-2-precio-usd';
 
 /**
- * Compara A11.2 + A20.2 + A21.2 vs F13.2 en USD.
+ * USD del producto para F13.3: si A11.1 es dólares y hay A11.B (moneda local),
+ * A11.B reemplaza a A11. `0` cuenta como respondida.
+ */
+export function productUsdForTotals(
+  answers: Record<string, AnswerValue>
+): number | null {
+  if (answers[PRODUCT_MONEDA] === '3') {
+    const a11b = parseAmount(answers[PRODUCT_A11B]);
+    if (a11b !== null) {
+      const localCode = monedaCodeForAmount(PRODUCT_A11B, answers);
+      if (localCode) {
+        const usd = toUsd(a11b, localCode);
+        if (usd !== null) return usd;
+      }
+    }
+  }
+  return parseAmount(answers[PRODUCT_USD]);
+}
+
+/**
+ * Compara (A11.2 o A11B) + A20.2 + A21.2 vs F13.2 en USD.
  * Tolerancia: max($1, 2% del total F13.2).
  */
 export function totalsMatch(
   answers: Record<string, AnswerValue>
 ): boolean | null {
-  const product = parseAmount(answers[PRODUCT_USD]);
+  const product = productUsdForTotals(answers);
   const shipping = parseAmount(answers[SHIPPING_USD]);
   const tax = parseAmount(answers[TAX_USD]);
   const total = parseAmount(answers[TOTAL_USD]);

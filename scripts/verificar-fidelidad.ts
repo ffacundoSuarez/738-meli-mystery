@@ -28,6 +28,9 @@ const FORBIDDEN = [
 const COMPANION_ALLOW = new Set([
   'A10. Especifique la categoría',
   'A13. Especifique vendido por',
+  // A11.B: pregunta nueva (Word posterior al 03.08)
+  'A11.B Precio del producto en moneda local al momento de la compra.',
+  'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
   'C01.1. ¿Cuál otro medio?',
   'C02.1. ¿Cuál otro medio?',
   'C03.1. ¿Cuál otro medio?',

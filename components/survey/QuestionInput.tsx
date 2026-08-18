@@ -8,9 +8,9 @@ import { Progress } from '@/components/ui/progress';
 import { DateTimePicker } from '@/components/survey/DateTimePicker';
 import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory } from '@/lib/survey-logic';
 import {
-  PRICE_AMOUNT_MONEDA,
   amountUsdPreview,
   isImplausiblyLowLocalAmount,
+  monedaCodeForAmount,
   totalsMatch,
 } from '@/lib/survey-config/computed';
 import { pick } from '@/lib/format';
@@ -255,10 +255,9 @@ export function QuestionInput({
   }
 
   if (question.type === 'number') {
-    const monedaId = PRICE_AMOUNT_MONEDA[question.id];
-    const monedaCode = monedaId ? answers[monedaId] : undefined;
+    const monedaCode = monedaCodeForAmount(question.id, answers);
     const preview =
-      !isComputed && monedaId
+      !isComputed && monedaCode
         ? amountUsdPreview(value, monedaCode)
         : null;
     const tooLow =

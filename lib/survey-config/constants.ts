@@ -41,6 +41,22 @@ export function range(qid: string, min: number, max: number): Condition {
   };
 }
 
+/**
+ * AND de cláusulas. Aplana `{ all: [...] }` (p. ej. `range`) porque el motor
+ * no anida `all`.
+ */
+export function and(...parts: Condition[]): Condition {
+  const all: ConditionClause[] = [];
+  for (const part of parts) {
+    if ('all' in part) {
+      all.push(...part.all);
+    } else if ('questionId' in part) {
+      all.push(part);
+    }
+  }
+  return { all };
+}
+
 /** Clona opciones agregándoles showIf por país (Chile=1, Colombia=2). */
 export function withPais(code: string, options: QuestionOption[]): QuestionOption[] {
   return options.map((o) => ({ ...o, showIf: pais(code) }));

@@ -3,6 +3,7 @@ import {
   MEDIOS_NOTIFICACION,
   SI_NO_COD,
   SI_NO_NA,
+  and,
   eq,
   evidenciasModule,
   range,
@@ -168,34 +169,6 @@ export const parte2: SurveySection = {
           required: true,
         },
         {
-          id: 'q31q3-tracking',
-          codigoOriginal: 'C06',
-          text: 'C06. ¿Recibiste acceso a un seguimiento de la entrega en tiempo real mediante un mapa o una actualización minuto a minuto (tracking real time)?',
-          type: 'single',
-          options: SI_NO_COD,
-          required: true,
-          hint: 'ACLARACIÓN: Debe ser con mapa o tracking de minuto a minuto en formato Real time. No aplica si es solo el paso a paso en formato de puntos/listado. Necesariamente es el seguimiento por mapeo del producto o por tiempo real.\nResponda “Sí” solo cuando la información enviada por el marketplace o la transportadora incluye un mapa GPS que permite visualizar en tiempo real el recorrido del paquete.',
-        },
-        {
-          id: 'q31q4-recorrido',
-          codigoOriginal: 'C07',
-          text: 'C07. Copie en formato TEXTO el historial completo del recorrido del pedido, desde la aprobación de la compra hasta la entrega.',
-          type: 'longtext',
-          required: true,
-          validate: 'trackingHistory',
-          hint: `Ejemplo:
-Enviado con PASAREX
-ID de rastreo: AMZPSR021029556
-Estás viendo la misma información sobre el estado del pedido a la que pueden acceder nuestros agentes del Servicio de atención al cliente.
-lunes, 2 de febrero
-12:21 p. m.
-Paquete entregado al cliente.
-Medellin, CO
-10:23 a. m.
-Paquete en reparto.
-Medellin, CO`,
-        },
-        {
           id: 'q-d00-cambio-fecha',
           codigoOriginal: 'D00',
           text: 'D00. ¿Recibió una notificación informando un cambio en la fecha de entrega?',
@@ -255,6 +228,7 @@ Medellin, CO`,
           scaleMax: 10,
           scaleMinLabel: 'Extremadamente difícil',
           scaleMaxLabel: 'Extremadamente fácil',
+          showIf: eq('q55-1-contactar-vendedor', '1'),
           required: true,
         },
         {
@@ -268,7 +242,10 @@ Medellin, CO`,
             { value: '3', label: 'Demoras en establecer contacto' },
             { value: '4', label: 'Otros' },
           ],
-          showIf: range('q55a-facilidad', 0, 6),
+          showIf: and(
+            eq('q55-1-contactar-vendedor', '1'),
+            range('q55a-facilidad', 0, 6)
+          ),
           required: true,
         },
         {
@@ -276,7 +253,10 @@ Medellin, CO`,
           codigoOriginal: 'D03.1.1',
           text: 'D03.1.1. ¿Podría dar más detalles sobre la calificación?',
           type: 'text',
-          showIf: range('q55a-facilidad', 0, 6),
+          showIf: and(
+            eq('q55-1-contactar-vendedor', '1'),
+            range('q55a-facilidad', 0, 6)
+          ),
           required: true,
         },
         {
@@ -293,7 +273,10 @@ Medellin, CO`,
             },
             { value: '4', label: 'Otros' },
           ],
-          showIf: range('q55a-facilidad', 7, 8),
+          showIf: and(
+            eq('q55-1-contactar-vendedor', '1'),
+            range('q55a-facilidad', 7, 8)
+          ),
           required: true,
         },
         {
@@ -301,7 +284,10 @@ Medellin, CO`,
           codigoOriginal: 'D03.2.1',
           text: 'D03.2.1. ¿Qué otra cosa podría mejorar?',
           type: 'text',
-          showIf: range('q55a-facilidad', 7, 8),
+          showIf: and(
+            eq('q55-1-contactar-vendedor', '1'),
+            range('q55a-facilidad', 7, 8)
+          ),
           required: true,
         },
         {
@@ -324,7 +310,10 @@ Medellin, CO`,
             },
             { value: '4', label: 'Otros' },
           ],
-          showIf: range('q55a-facilidad', 9, 10),
+          showIf: and(
+            eq('q55-1-contactar-vendedor', '1'),
+            range('q55a-facilidad', 9, 10)
+          ),
           required: true,
         },
         {
@@ -332,7 +321,10 @@ Medellin, CO`,
           codigoOriginal: 'D03.3.1',
           text: 'D03.3.1. ¿Qué otro motivo fue el principal para dar esa calificación?',
           type: 'text',
-          showIf: range('q55a-facilidad', 9, 10),
+          showIf: and(
+            eq('q55-1-contactar-vendedor', '1'),
+            range('q55a-facilidad', 9, 10)
+          ),
           required: true,
         },
         {
@@ -340,6 +332,7 @@ Medellin, CO`,
           codigoOriginal: 'D04',
           text: 'D04. Adjunte capturas de la ruta que realiza para llegar al canal de atención al cliente.',
           type: 'evidence',
+          showIf: eq('q55-1-contactar-vendedor', '1'),
           required: true,
         },
         {
@@ -416,7 +409,7 @@ Medellin, CO`,
           codigoOriginal: 'D08',
           text: 'D08. Adjunte capturas de todas las comunicaciones con atención al cliente.',
           type: 'evidence',
-          required: true,
+          required: false,
           hint: 'Ejemplos: chats con atención al cliente y correos electrónicos recibidos con información del caso.',
         },
       ],

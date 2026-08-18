@@ -284,7 +284,12 @@ export function ResponseDetails({
   }, [response.id, response.reviewFlags]);
 
   useEffect(() => {
-    setEditedAnswers(response.answers || {});
+    setEditedAnswers(
+      applyComputedAnswers(
+        getAllQuestions(surveySections),
+        response.answers || {}
+      )
+    );
     setEditingIds(new Set());
   }, [response.id, response.answers]);
 

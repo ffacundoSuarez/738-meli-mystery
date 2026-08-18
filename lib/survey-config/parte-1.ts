@@ -153,6 +153,16 @@ export const parte1: SurveySection = {
           computed: usdFrom('q12-precio', 'q12-1-moneda'),
         },
         {
+          id: 'q12b-precio-a11b',
+          codigoOriginal: 'A11.B',
+          // Word: "COD 1 (DOLARES)" — typo; en A11.1 el dólar es código 3
+          text: 'A11.B Precio del producto en moneda local al momento de la compra.',
+          type: 'number',
+          required: true,
+          showIf: eq('q12-1-moneda', '3'),
+          hint: 'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
+        },
+        {
           id: 'q13-enviado-por',
           codigoOriginal: 'A12',
           text: 'A12. ¿Qué empresa figura en la leyenda “Enviado por”?',
@@ -195,6 +205,7 @@ export const parte1: SurveySection = {
           type: 'single',
           options: LOGISTICA,
           required: true,
+          defaultValue: '1',
           hint: 'Player: producto enviado por Marketplace\nSeller: producto enviado por Seller\n* Seleccionar esta opción. El tipo de logística siempre es “Player”. (Siempre el Marketplace es quien hace el Envío).',
         },
         {

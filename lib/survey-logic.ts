@@ -96,8 +96,13 @@ export function evaluateClause(
   }
 }
 
+/** True si no hay respuesta shopper (no trata 0 como vacío). */
+function isBlankAnswer(value: AnswerValue | undefined): boolean {
+  return value === undefined || value === null || value === '';
+}
+
 /**
- * Evalúa todas las preguntas con `computed` y mergea el resultado en answers
+ * Evalúa defaults y campos `computed` y mergea el resultado en answers
  * para que viaje al jsonb (exports, dashboard) sin recalcular.
  */
 export function applyComputedAnswers(
@@ -105,6 +110,12 @@ export function applyComputedAnswers(
   answers: Record<string, AnswerValue>
 ): Record<string, AnswerValue> {
   const next = { ...answers };
+  for (const q of questions) {
+    if (q.defaultValue === undefined) continue;
+    if (isBlankAnswer(next[q.id])) {
+      next[q.id] = q.defaultValue;
+    }
+  }
   for (const q of questions) {
     if (!q.computed) continue;
     try {
@@ -482,6 +493,9 @@ export function isQuestionAnswered(
     // permite avanzar/enviar la parte aunque no se adjunten archivos.
     return question.required ? isEvidenceValue(value) : true;
   }
+
+  // Opcional no-evidencia (p. ej. A11B): vacío no bloquea el avance
+  if (question.required === false && !hasAnswerValue(value)) return true;
 
   if (!hasAnswerValue(value)) return false;
   if (typeof value === 'string') {
