@@ -27,7 +27,7 @@ import { formatQuestionText, interpolate, pick } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
 import { AnswerValue, EvidenceFile, Lang, Question, ReviewFlagsMap, StageStatus, StagesMap, SurveyModule } from '@/lib/types';
 import { getResponseByToken, saveStageByToken, uploadEvidence } from '@/lib/data';
-import { validateEvidenceFile } from '@/lib/evidence-validation';
+import { buildEvidenceVisionContext, validateEvidenceFile } from '@/lib/evidence-validation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -291,7 +291,11 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         );
 
         if (!skipVision && question && file.type.startsWith('image/')) {
-          const validation = await validateEvidenceFile(uploadedFile, question);
+          const validation = await validateEvidenceFile(
+            uploadedFile,
+            question,
+            buildEvidenceVisionContext(question, answers)
+          );
           uploadedFile.validation = validation;
           if (validation.status === 'invalid') {
             toast.warning(

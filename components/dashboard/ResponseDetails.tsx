@@ -42,7 +42,7 @@ import {
   getAllQuestions,
 } from '@/lib/survey-logic';
 import { uploadEvidence } from '@/lib/data';
-import { validateEvidenceFile } from '@/lib/evidence-validation';
+import { buildEvidenceVisionContext, validateEvidenceFile } from '@/lib/evidence-validation';
 import {
   AnswerValue,
   EvidenceFile,
@@ -390,7 +390,11 @@ export function ResponseDetails({
         if (!skipVision && question && file.type.startsWith('image/')) {
           uploadedFile.validation = await validateEvidenceFile(
             uploadedFile,
-            question
+            question,
+            buildEvidenceVisionContext(question, {
+              ...(response.answers || {}),
+              ...editedAnswers,
+            })
           );
         }
 
