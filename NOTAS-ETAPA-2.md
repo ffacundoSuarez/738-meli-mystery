@@ -1,7 +1,15 @@
 # Etapa 2 — Carga del cuestionario real (728 Mercado Envíos)
 
-> Documento de traspaso. La Etapa 1 (infra + esquema `meli_` + branding) está
-> terminada y verificada. Esto describe qué falta y con qué reglas hacerlo.
+> **Histórico (agosto 2026).** Documento de traspaso de cuando se cargó el Word.
+> El cuestionario **03.08 A–F ya está en código** (`lib/survey-config/parte-*.ts`):
+> motor `gte`/`lte`, piping, computed, verificador de fidelidad, `ola` y allowlist SQL
+> (migraciones 0002–0003) están hechos. No usar este archivo como estado actual.
+> Pendientes de negocio: `PENDIENTES-MELI.md`. Setup vigente: `README.md`.
+>
+> Lo que sigue se conserva como reglas de fidelidad y contexto del port.
+
+> Documento de traspaso original. La Etapa 1 (infra + esquema `meli_` + branding) está
+> terminada y verificada. El texto de abajo describe qué faltaba entonces.
 
 ---
 

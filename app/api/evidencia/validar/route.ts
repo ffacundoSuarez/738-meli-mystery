@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { imageUrl, questionId, questionText, hint } = body || {};
+    const { imageUrl, questionId, questionText, hint, marketplace } = body || {};
 
     if (
       typeof imageUrl !== 'string' ||
@@ -47,6 +47,12 @@ export async function POST(request: NextRequest) {
         questionText:
           typeof questionText === 'string' ? questionText : undefined,
         hint: typeof hint === 'string' ? hint : undefined,
+        marketplace:
+          marketplace === 'amazon' ||
+          marketplace === 'falabella' ||
+          marketplace === 'temu'
+            ? marketplace
+            : undefined,
       }),
       // Vision puede tardar
       signal: AbortSignal.timeout(60000),

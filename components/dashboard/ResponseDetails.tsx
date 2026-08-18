@@ -28,6 +28,7 @@ import {
   getAllSectionModules,
 } from '@/lib/survey-config';
 import {
+  COMPETIDOR_QUESTION_ID,
   getAnswerLabel,
   hasAnswerValue,
   isEvidence,
@@ -385,7 +386,9 @@ export function ResponseDetails({
         if (!skipVision && question && file.type.startsWith('image/')) {
           uploadedFile.validation = await validateEvidenceFile(
             uploadedFile,
-            question
+            question,
+            (editedAnswers[COMPETIDOR_QUESTION_ID] ??
+              response.answers?.[COMPETIDOR_QUESTION_ID]) as string | undefined
           );
         }
 

@@ -1,5 +1,9 @@
 # Pendientes y bloqueantes para MELI — Etapa 2 (cuestionario 03.08 A–F)
 
+> **Estado actual:** el cuestionario 03.08 está en producción de código (no es placeholder).
+> Este archivo sigue siendo la lista de **ítems abiertos de negocio** (FX, fórmulas OK/NOT OK,
+> bloque cancelaciones, filtro Amazon solo Colombia). Lo demás del port ya está aplicado.
+
 Consolidado tras portar el Word `728 - Mystery Mercado Envios - Cuestionario 03.08.docx`
 (base 31.07 + ajustes de hints A12/A13 y tilde en B05).
 

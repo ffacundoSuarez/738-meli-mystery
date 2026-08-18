@@ -23,7 +23,7 @@ import {
   applyComputedAnswers,
   getAllQuestions,
 } from '@/lib/survey-logic';
-import { formatQuestionText, interpolate, pick } from '@/lib/format';
+import { COMPETIDOR_QUESTION_ID, formatQuestionText, interpolate, pick } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
 import { AnswerValue, EvidenceFile, Lang, Question, ReviewFlagsMap, StageStatus, StagesMap, SurveyModule } from '@/lib/types';
 import { getResponseByToken, saveStageByToken, uploadEvidence } from '@/lib/data';
@@ -289,7 +289,11 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         );
 
         if (!skipVision && question && file.type.startsWith('image/')) {
-          const validation = await validateEvidenceFile(uploadedFile, question);
+          const validation = await validateEvidenceFile(
+            uploadedFile,
+            question,
+            answers[COMPETIDOR_QUESTION_ID] as string | undefined
+          );
           uploadedFile.validation = validation;
           if (validation.status === 'invalid') {
             toast.warning(
