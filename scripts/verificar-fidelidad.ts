@@ -28,9 +28,8 @@ const FORBIDDEN = [
 const COMPANION_ALLOW = new Set([
   'A10. Especifique la categoría',
   'A13. Especifique vendido por',
-  // A11B: pedido Slack (opcional); no está en el Word 03.08
-  'A11B. ¿Cuál es el precio del producto a usar en el costo total, sin incluir envío ni impuestos?',
-  'Completar solo si corresponde. Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
+  // A11.B: pregunta nueva (Word posterior al 03.08)
+  'A11.B Precio del producto en moneda local al momento de la compra.',
   'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
   'C01.1. ¿Cuál otro medio?',
   'C02.1. ¿Cuál otro medio?',

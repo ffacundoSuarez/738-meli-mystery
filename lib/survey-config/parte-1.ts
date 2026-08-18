@@ -154,11 +154,13 @@ export const parte1: SurveySection = {
         },
         {
           id: 'q12b-precio-a11b',
-          codigoOriginal: 'A11B',
-          text: 'A11B. ¿Cuál es el precio del producto a usar en el costo total, sin incluir envío ni impuestos?',
+          codigoOriginal: 'A11.B',
+          // Word: "COD 1 (DOLARES)" — typo; en A11.1 el dólar es código 3
+          text: 'A11.B Precio del producto en moneda local al momento de la compra.',
           type: 'number',
-          required: false,
-          hint: 'Completar solo si corresponde. Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
+          required: true,
+          showIf: eq('q12-1-moneda', '3'),
+          hint: 'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
         },
         {
           id: 'q13-enviado-por',
