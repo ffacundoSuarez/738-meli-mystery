@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { DateTimePicker } from '@/components/survey/DateTimePicker';
-import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory } from '@/lib/survey-logic';
+import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory, isQuestionLocked } from '@/lib/survey-logic';
 import {
   amountUsdPreview,
   isImplausiblyLowLocalAmount,
@@ -58,6 +58,7 @@ export function QuestionInput({
   );
 
   const isComputed = Boolean(question.computed);
+  const isLocked = isQuestionLocked(question, answers);
   const updateValue = (next: AnswerValue) => onChange(question.id, next);
 
   const toggleMultipleChoice = (optionValue: string) => {
@@ -88,17 +89,26 @@ export function QuestionInput({
   }
 
   if (question.type === 'single' && options.length > 0) {
+    const displayValue =
+      isLocked && question.lockedValue !== undefined ? question.lockedValue : value;
+
     return (
       <div className="grid gap-2">
         {options.map((option) => {
-          const selected = value === option.value;
+          const selected = displayValue === option.value;
           return (
             <button
               key={option.value}
               type="button"
-              onClick={() => updateValue(selected ? '' : option.value)}
+              disabled={isLocked}
+              onClick={() => {
+                if (!isLocked) updateValue(selected ? '' : option.value);
+              }}
               className={cn(
-                'flex items-center text-left w-full p-4 rounded-lg border-2 cursor-pointer transition-all',
+                'flex items-center text-left w-full p-4 rounded-lg border-2 transition-all',
+                isLocked
+                  ? 'cursor-not-allowed opacity-70'
+                  : 'cursor-pointer',
                 selected
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-primary/50 hover:bg-muted/50'

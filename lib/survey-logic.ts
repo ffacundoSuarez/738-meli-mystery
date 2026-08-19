@@ -124,7 +124,25 @@ export function applyComputedAnswers(
       // No bloquear el flujo si una fórmula falla; dejar sin valor
     }
   }
+  for (const q of questions) {
+    if (q.lockedIf === undefined || q.lockedValue === undefined) continue;
+    if (evaluateCondition(q.lockedIf, next)) {
+      next[q.id] = q.lockedValue;
+    }
+  }
   return next;
+}
+
+/** True si la pregunta tiene valor fijo por lockedIf en el estado actual. */
+export function isQuestionLocked(
+  question: Question,
+  answers: Record<string, AnswerValue>
+): boolean {
+  return (
+    question.lockedIf !== undefined &&
+    question.lockedValue !== undefined &&
+    evaluateCondition(question.lockedIf, answers)
+  );
 }
 
 /** Evalúa una condición (legacy, AND u OR) */

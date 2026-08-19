@@ -33,6 +33,8 @@ import {
   isEvidence,
   isMatrixAnswer,
   formatQuestionText,
+  pick,
+  interpolate,
 } from '@/lib/format';
 import {
   getVisibleMatrixRows,
@@ -71,6 +73,7 @@ import {
   downloadPartZip,
   hasAnyEvidences,
 } from '@/lib/evidence-zip';
+import { checkPostalCode, PostalCheckStatus } from '@/lib/survey-config/postal';
 
 export type ResponseDetailsMode = 'revision' | 'results';
 
@@ -204,6 +207,27 @@ function stageWasSubmitted(status: StageStatus | undefined): boolean {
   return status === 'en_revision' || status === 'aprobada' || status === 'rechazada';
 }
 
+/** Vacío shopper: undefined, null, '' o array vacío. */
+function isEmptyAnswer(value: AnswerValue | undefined | null): boolean {
+  if (value === undefined || value === null || value === '') return true;
+  if (Array.isArray(value) && value.length === 0) return true;
+  return false;
+}
+
+function answersEqual(
+  a: AnswerValue | undefined,
+  b: AnswerValue | undefined
+): boolean {
+  if (isEmptyAnswer(a) && isEmptyAnswer(b)) return true;
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+const POSTAL_BADGE_COLORS: Record<PostalCheckStatus, string> = {
+  match: 'bg-green-50 text-green-800 border-green-200',
+  city_mismatch: 'bg-amber-50 text-amber-800 border-amber-200',
+  country_mismatch: 'bg-red-50 text-red-800 border-red-200',
+};
+
 /** Calcula el diff entre respuestas editadas y las guardadas */
 function getAnswersDiff(
   original: Record<string, AnswerValue>,
@@ -212,7 +236,7 @@ function getAnswersDiff(
   const diff: Record<string, AnswerValue> = {};
   const keys = new Set([...Object.keys(original), ...Object.keys(edited)]);
   for (const key of keys) {
-    if (JSON.stringify(original[key] ?? null) !== JSON.stringify(edited[key] ?? null)) {
+    if (!answersEqual(original[key], edited[key])) {
       diff[key] = edited[key];
     }
   }
@@ -512,6 +536,14 @@ export function ResponseDetails({
             const isEditing = editingIds.has(question.id);
             const questionChanged = question.id in answersDiff;
             const showEditControls = canEdit && question.type !== 'info';
+            const postalCheck =
+              question.id === 'q9-codigo-postal'
+                ? checkPostalCode(
+                    activeAnswers['q9-codigo-postal'],
+                    activeAnswers['f1-pais'],
+                    activeAnswers['q10-ciudad']
+                  )
+                : null;
 
             const dominantBorder =
               wasCorrected
@@ -528,6 +560,15 @@ export function ResponseDetails({
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {formatQuestionText(question.text)}
                 </p>
+
+                {question.hint && question.type !== 'info' && (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {interpolate(
+                      pick(question.hint, question.hintPt, lang),
+                      activeAnswers
+                    )}
+                  </p>
+                )}
 
                 {wasCorrected && storedFlag?.note && (
                   <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm space-y-1.5">
@@ -576,6 +617,17 @@ export function ResponseDetails({
                             Totales no cierran
                           </Badge>
                         )}
+                      {postalCheck && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-[10px] py-0 h-5 max-w-full whitespace-normal text-left',
+                            POSTAL_BADGE_COLORS[postalCheck.status]
+                          )}
+                        >
+                          {postalCheck.label}
+                        </Badge>
+                      )}
                       {questionChanged && (
                         <Badge
                           variant="outline"
