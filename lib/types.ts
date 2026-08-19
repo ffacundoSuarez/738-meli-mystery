@@ -89,6 +89,9 @@ export interface Question {
   matrixColumns?: QuestionOption[];
   /** Precarga si el campo está vacío; no pisa una respuesta ya guardada */
   defaultValue?: AnswerValue;
+  /** Si lockedIf se cumple, fija lockedValue y bloquea edición */
+  lockedIf?: Condition;
+  lockedValue?: AnswerValue;
   /** Valor derivado; se mergea en answers antes de persistir */
   computed?: (answers: Record<string, AnswerValue>) => AnswerValue;
 }

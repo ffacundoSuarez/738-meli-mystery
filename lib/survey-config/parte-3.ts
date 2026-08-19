@@ -212,7 +212,7 @@ export const parte3: SurveySection = {
         {
           id: 'q46-nfe',
           codigoOriginal: 'F12',
-          text: 'F12. ¿Recibió un comprobante fiscal de la compra?',
+          text: 'F12. ¿Recibió un comprobante fiscal (factura, boleta, etc.) de la compra?',
           type: 'single',
           options: SI_NO_COD,
           required: true,
@@ -221,7 +221,7 @@ export const parte3: SurveySection = {
         {
           id: 'q46a-foto-nfe',
           codigoOriginal: 'F12.1',
-          text: 'F12.1. Adjunte una foto o captura del comprobante fiscal.',
+          text: 'F12.1. Adjunte una foto o captura del comprobante fiscal (factura, boleta, etc.).',
           type: 'evidence',
           showIf: eq('q46-nfe', '1'),
           required: true,

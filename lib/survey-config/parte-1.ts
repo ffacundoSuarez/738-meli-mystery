@@ -175,7 +175,7 @@ export const parte1: SurveySection = {
         {
           id: 'q16-inventario',
           codigoOriginal: 'A16',
-          text: 'A16. ¿Cuál es el tipo de inventario del producto?',
+          text: 'A16. ¿Cuál es el tipo de inventario del producto (vendido por)?',
           type: 'single',
           options: INVENTARIO,
           required: true,
@@ -215,6 +215,8 @@ export const parte1: SurveySection = {
           type: 'single',
           options: SI_NO_COD,
           required: true,
+          lockedIf: eq('q8-competidor', 'amazon', 'temu'),
+          lockedValue: '1',
         },
         {
           id: 'q15b-pais-origen',
