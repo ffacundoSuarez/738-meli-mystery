@@ -125,24 +125,45 @@ export function applyComputedAnswers(
     }
   }
   for (const q of questions) {
-    if (q.lockedIf === undefined || q.lockedValue === undefined) continue;
-    if (evaluateCondition(q.lockedIf, next)) {
-      next[q.id] = q.lockedValue;
+    const locked = getLockedValue(q, next);
+    if (locked !== undefined) {
+      next[q.id] = locked;
     }
   }
   return next;
 }
 
-/** True si la pregunta tiene valor fijo por lockedIf en el estado actual. */
+/**
+ * Resuelve el valor bloqueado de una pregunta: primera regla en lockedRules
+ * que matchea, o lockedIf + lockedValue. undefined = no bloqueada.
+ */
+export function getLockedValue(
+  question: Question,
+  answers: Record<string, AnswerValue>
+): AnswerValue | undefined {
+  if (question.lockedRules?.length) {
+    for (const rule of question.lockedRules) {
+      if (evaluateCondition(rule.if, answers)) {
+        return rule.value;
+      }
+    }
+  }
+  if (
+    question.lockedIf !== undefined &&
+    question.lockedValue !== undefined &&
+    evaluateCondition(question.lockedIf, answers)
+  ) {
+    return question.lockedValue;
+  }
+  return undefined;
+}
+
+/** True si la pregunta tiene valor fijo por lockedRules/lockedIf en el estado actual. */
 export function isQuestionLocked(
   question: Question,
   answers: Record<string, AnswerValue>
 ): boolean {
-  return (
-    question.lockedIf !== undefined &&
-    question.lockedValue !== undefined &&
-    evaluateCondition(question.lockedIf, answers)
-  );
+  return getLockedValue(question, answers) !== undefined;
 }
 
 /** Evalúa una condición (legacy, AND u OR) */

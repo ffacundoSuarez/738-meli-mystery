@@ -215,8 +215,10 @@ export const parte1: SurveySection = {
           type: 'single',
           options: SI_NO_COD,
           required: true,
-          lockedIf: eq('q8-competidor', 'amazon', 'temu'),
-          lockedValue: '1',
+          lockedRules: [
+            { if: eq('q8-competidor', 'amazon', 'temu'), value: '1' },
+            { if: eq('q8-competidor', 'falabella'), value: '2' },
+          ],
         },
         {
           id: 'q15b-pais-origen',
@@ -312,6 +314,13 @@ export const parte1: SurveySection = {
           type: 'number',
           required: false,
           computed: usdFrom('q19a-precio-impuestos', 'q19a-1-moneda-impuestos'),
+        },
+        {
+          id: 'q19c-evidencia-costo-final',
+          codigoOriginal: 'A21.3',
+          text: 'A21.3. Adjunte una captura de pantalla del costo final de la compra, desplegada por ítem.',
+          type: 'evidence',
+          required: true,
         },
       ],
     },

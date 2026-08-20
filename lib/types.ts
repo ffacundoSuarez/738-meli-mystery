@@ -92,6 +92,11 @@ export interface Question {
   /** Si lockedIf se cumple, fija lockedValue y bloquea edición */
   lockedIf?: Condition;
   lockedValue?: AnswerValue;
+  /**
+   * Reglas de bloqueo con valores distintos (primera que matchea gana).
+   * Tiene prioridad sobre lockedIf/lockedValue cuando hay match.
+   */
+  lockedRules?: { if: Condition; value: AnswerValue }[];
   /** Valor derivado; se mergea en answers antes de persistir */
   computed?: (answers: Record<string, AnswerValue>) => AnswerValue;
 }

@@ -31,6 +31,7 @@ const COMPANION_ALLOW = new Set([
   // A11.B: pregunta nueva (Word posterior al 03.08)
   'A11.B Precio del producto en moneda local al momento de la compra.',
   'A16. ¿Cuál es el tipo de inventario del producto (vendido por)?',
+  'A21.3. Adjunte una captura de pantalla del costo final de la compra, desplegada por ítem.',
   'F12. ¿Recibió un comprobante fiscal (factura, boleta, etc.) de la compra?',
   'F12.1. Adjunte una foto o captura del comprobante fiscal (factura, boleta, etc.).',
   'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
