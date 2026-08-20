@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { DateTimePicker } from '@/components/survey/DateTimePicker';
-import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory, isQuestionLocked } from '@/lib/survey-logic';
+import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory, getLockedValue, isQuestionLocked } from '@/lib/survey-logic';
 import {
   amountUsdPreview,
   isImplausiblyLowLocalAmount,
@@ -58,6 +58,7 @@ export function QuestionInput({
   );
 
   const isComputed = Boolean(question.computed);
+  const lockedValue = getLockedValue(question, answers);
   const isLocked = isQuestionLocked(question, answers);
   const updateValue = (next: AnswerValue) => onChange(question.id, next);
 
@@ -90,7 +91,7 @@ export function QuestionInput({
 
   if (question.type === 'single' && options.length > 0) {
     const displayValue =
-      isLocked && question.lockedValue !== undefined ? question.lockedValue : value;
+      isLocked && lockedValue !== undefined ? lockedValue : value;
 
     return (
       <div className="grid gap-2">

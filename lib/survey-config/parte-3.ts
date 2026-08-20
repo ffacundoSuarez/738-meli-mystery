@@ -216,6 +216,8 @@ export const parte3: SurveySection = {
           type: 'single',
           options: SI_NO_COD,
           required: true,
+          lockedIf: eq('q8-competidor', 'falabella'),
+          lockedValue: '1',
           hint: 'El comprobante fiscal contiene los datos fiscales del vendedor y la descripción del producto comprado. Puede recibirse en formato digital o físico.',
         },
         {
