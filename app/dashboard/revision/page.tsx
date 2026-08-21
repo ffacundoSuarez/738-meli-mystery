@@ -42,7 +42,8 @@ import {
   getResponseByToken,
 } from '@/lib/data';
 import { getSectionTitle, REVIEWABLE_SECTIONS } from '@/lib/survey-config';
-import { PAISES } from '@/lib/survey-config/constants';
+import { CIUDADES, PAISES } from '@/lib/survey-config/constants';
+import { evaluateCondition } from '@/lib/survey-logic';
 import { getScreeningSnapshot } from '@/lib/survey-snapshot';
 import { AnswerValue, StageStatus, SurveyResponse } from '@/lib/types';
 import {
@@ -92,9 +93,29 @@ export default function RevisionPage() {
   const [filterEtapa, setFilterEtapa] = useState('all');
   const [filterEstado, setFilterEstado] = useState('all');
   const [filterPais, setFilterPais] = useState('all');
+  const [filterCiudad, setFilterCiudad] = useState('all');
   const [filterTipo, setFilterTipo] = useState<'all' | 'real' | 'prueba'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
+
+  /** Ciudades visibles según el país seleccionado (o todas si país = Todos) */
+  const ciudadOptions = useMemo(() => {
+    if (filterPais === 'all') return CIUDADES;
+    return CIUDADES.filter((c) =>
+      evaluateCondition(c.showIf, { 'f1-pais': filterPais })
+    );
+  }, [filterPais]);
+
+  // Si cambia el país y la ciudad elegida ya no aplica, resetear a Todas
+  useEffect(() => {
+    if (
+      filterCiudad !== 'all' &&
+      !ciudadOptions.some((c) => c.value === filterCiudad)
+    ) {
+      setFilterCiudad('all');
+    }
+  }, [filterCiudad, ciudadOptions]);
+
 
   const load = async () => {
     try {
@@ -138,6 +159,9 @@ export default function RevisionPage() {
         stageEntries.some((e) => e.status === filterEstado);
       const matchesPais =
         filterPais === 'all' || snapshot.paisCode === filterPais;
+      const ciudadCode = r.answers['q10-ciudad'] as string | undefined;
+      const matchesCiudad =
+        filterCiudad === 'all' || ciudadCode === filterCiudad;
       const matchesTipo =
         filterTipo === 'all' ||
         (filterTipo === 'prueba' ? Boolean(r.isPrueba) : !r.isPrueba);
@@ -149,10 +173,21 @@ export default function RevisionPage() {
         matchesEtapa &&
         matchesEstado &&
         matchesPais &&
+        matchesCiudad &&
         matchesTipo
       );
     });
-  }, [responses, filterNombre, filterEmpresa, filterId, filterEtapa, filterEstado, filterPais, filterTipo]);
+  }, [
+    responses,
+    filterNombre,
+    filterEmpresa,
+    filterId,
+    filterEtapa,
+    filterEstado,
+    filterPais,
+    filterCiudad,
+    filterTipo,
+  ]);
 
   const filteredPendingStages = useMemo(
     () => filteredResponses.reduce((sum, r) => sum + pendingStageIds(r).length, 0),
@@ -167,9 +202,18 @@ export default function RevisionPage() {
     if (filterEtapa !== 'all') count += 1;
     if (filterEstado !== 'all') count += 1;
     if (filterPais !== 'all') count += 1;
+    if (filterCiudad !== 'all') count += 1;
     if (filterTipo !== 'all') count += 1;
     return count;
-  }, [filterEmpresa, filterId, filterEtapa, filterEstado, filterPais, filterTipo]);
+  }, [
+    filterEmpresa,
+    filterId,
+    filterEtapa,
+    filterEstado,
+    filterPais,
+    filterCiudad,
+    filterTipo,
+  ]);
 
   const clearFilters = () => {
     setFilterEmpresa('');
@@ -177,6 +221,7 @@ export default function RevisionPage() {
     setFilterEtapa('all');
     setFilterEstado('all');
     setFilterPais('all');
+    setFilterCiudad('all');
     setFilterTipo('all');
   };
 
@@ -578,6 +623,23 @@ export default function RevisionPage() {
                   {PAISES.map((p) => (
                     <SelectItem key={p.value} value={p.value}>
                       {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Ciudad</Label>
+              <Select value={filterCiudad} onValueChange={setFilterCiudad}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Ciudad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las ciudades</SelectItem>
+                  {ciudadOptions.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
