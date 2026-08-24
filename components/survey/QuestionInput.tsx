@@ -451,7 +451,13 @@ export function QuestionInput({
                 </a>
                 {file.validation?.status === 'invalid' && (
                   <p className="text-xs text-destructive">
-                    {file.validation.reason || t('evidenceInvalid', lang)}
+                    {file.validation.reason ||
+                      t(
+                        question.evidenceGate === 'block-invalid'
+                          ? 'evidenceInvalidBlocked'
+                          : 'evidenceInvalid',
+                        lang
+                      )}
                   </p>
                 )}
                 {file.validation?.status === 'doubt' && (

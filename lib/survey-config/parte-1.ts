@@ -92,6 +92,21 @@ export const parte1: SurveySection = {
           required: true,
         },
         {
+          id: 'q8a-prime-evidencia',
+          codigoOriginal: 'A07.1',
+          text: 'A07.1. Adjunte evidencia de que está comprando como Amazon Prime (no Amazon común).',
+          textPt:
+            'A07.1. Anexe evidência de que está comprando como Amazon Prime (não Amazon comum).',
+          type: 'evidence',
+          showIf: eq('q8-competidor', 'amazon'),
+          required: true,
+          internalOnly: true,
+          evidenceGate: 'block-invalid',
+          hint: 'Cualquier captura que demuestre membresía o compra Prime: cuenta, checkout, pedido, envío o beneficios. No hace falta un logo fijo; tiene que entenderse que es Prime y no Amazon sin Prime.',
+          hintPt:
+            'Qualquer captura que demonstre adesão ou compra Prime: conta, checkout, pedido, envio ou benefícios. Não precisa de um logo fixo; tem de perceber-se que é Prime e não Amazon sem Prime.',
+        },
+        {
           id: 'q9-codigo-postal',
           codigoOriginal: 'A08',
           text: 'A08. Indique el código postal de la dirección de entrega.',

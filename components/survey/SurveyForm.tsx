@@ -298,10 +298,11 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
           );
           uploadedFile.validation = validation;
           if (validation.status === 'invalid') {
+            const blocked = question.evidenceGate === 'block-invalid';
             toast.warning(
               validation.reason && validation.reason !== 'validation_unavailable'
                 ? validation.reason
-                : t('evidenceInvalid', lang)
+                : t(blocked ? 'evidenceInvalidBlocked' : 'evidenceInvalid', lang)
             );
           } else if (validation.status === 'doubt') {
             toast.warning(

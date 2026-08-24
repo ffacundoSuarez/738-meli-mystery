@@ -212,11 +212,21 @@ export const parte2: SurveySection = {
       description: 'CONTACTO PRODUCTO DEMORADO',
       questions: [
         {
+          id: 'q-d02a-demora',
+          codigoOriginal: 'D02a',
+          text: 'D02a. ¿Tu pedido sufrió una demora?',
+          textPt: 'D02a. O seu pedido sofreu um atraso?',
+          type: 'single',
+          options: SI_NO_COD,
+          required: true,
+        },
+        {
           id: 'q55-1-contactar-vendedor',
           codigoOriginal: 'D02',
           text: 'D02. ¿Es posible contactar al vendedor para realizar consultas?',
           type: 'single',
           options: SI_NO_COD,
+          showIf: eq('q-d02a-demora', '1'),
           required: true,
         },
         {
@@ -228,7 +238,10 @@ export const parte2: SurveySection = {
           scaleMax: 10,
           scaleMinLabel: 'Extremadamente difícil',
           scaleMaxLabel: 'Extremadamente fácil',
-          showIf: eq('q55-1-contactar-vendedor', '1'),
+          showIf: and(
+            eq('q-d02a-demora', '1'),
+            eq('q55-1-contactar-vendedor', '1')
+          ),
           required: true,
         },
         {
@@ -243,6 +256,7 @@ export const parte2: SurveySection = {
             { value: '4', label: 'Otros' },
           ],
           showIf: and(
+            eq('q-d02a-demora', '1'),
             eq('q55-1-contactar-vendedor', '1'),
             range('q55a-facilidad', 0, 6)
           ),
@@ -254,6 +268,7 @@ export const parte2: SurveySection = {
           text: 'D03.1.1. ¿Podría dar más detalles sobre la calificación?',
           type: 'text',
           showIf: and(
+            eq('q-d02a-demora', '1'),
             eq('q55-1-contactar-vendedor', '1'),
             range('q55a-facilidad', 0, 6)
           ),
@@ -274,6 +289,7 @@ export const parte2: SurveySection = {
             { value: '4', label: 'Otros' },
           ],
           showIf: and(
+            eq('q-d02a-demora', '1'),
             eq('q55-1-contactar-vendedor', '1'),
             range('q55a-facilidad', 7, 8)
           ),
@@ -285,6 +301,7 @@ export const parte2: SurveySection = {
           text: 'D03.2.1. ¿Qué otra cosa podría mejorar?',
           type: 'text',
           showIf: and(
+            eq('q-d02a-demora', '1'),
             eq('q55-1-contactar-vendedor', '1'),
             range('q55a-facilidad', 7, 8)
           ),
@@ -311,6 +328,7 @@ export const parte2: SurveySection = {
             { value: '4', label: 'Otros' },
           ],
           showIf: and(
+            eq('q-d02a-demora', '1'),
             eq('q55-1-contactar-vendedor', '1'),
             range('q55a-facilidad', 9, 10)
           ),
@@ -322,6 +340,7 @@ export const parte2: SurveySection = {
           text: 'D03.3.1. ¿Qué otro motivo fue el principal para dar esa calificación?',
           type: 'text',
           showIf: and(
+            eq('q-d02a-demora', '1'),
             eq('q55-1-contactar-vendedor', '1'),
             range('q55a-facilidad', 9, 10)
           ),
@@ -332,7 +351,10 @@ export const parte2: SurveySection = {
           codigoOriginal: 'D04',
           text: 'D04. Adjunte capturas de la ruta que realiza para llegar al canal de atención al cliente.',
           type: 'evidence',
-          showIf: eq('q55-1-contactar-vendedor', '1'),
+          showIf: and(
+            eq('q-d02a-demora', '1'),
+            eq('q55-1-contactar-vendedor', '1')
+          ),
           required: true,
         },
         {
@@ -341,6 +363,7 @@ export const parte2: SurveySection = {
           text: 'D05. ¿Hay atención online disponible por chat o teléfono?',
           type: 'single',
           options: SI_NO_NA,
+          showIf: eq('q-d02a-demora', '1'),
           required: true,
         },
         {
@@ -349,6 +372,7 @@ export const parte2: SurveySection = {
           text: 'D06. ¿Le permiten cancelar el envío demorado mientras está en camino?',
           type: 'single',
           options: SI_NO_NA,
+          showIf: eq('q-d02a-demora', '1'),
           required: true,
           hint: 'INSTRUCCIÓN AL MYSTERY: Consulte expresamente si es posible cancelar el envío demorado mientras se encuentra en tránsito.',
         },
@@ -357,7 +381,7 @@ export const parte2: SurveySection = {
           codigoOriginal: 'D06.1',
           text: 'D06.1. ¿En qué plazo puede cancelar el envío demorado mientras está en camino?',
           type: 'text',
-          showIf: eq('q55d-cancelar', '1'),
+          showIf: and(eq('q-d02a-demora', '1'), eq('q55d-cancelar', '1')),
           required: true,
         },
         {
@@ -366,6 +390,7 @@ export const parte2: SurveySection = {
           text: 'D07. Al solicitar una compensación por la demora, ¿se la otorgan desde atención al cliente?',
           type: 'single',
           options: SI_NO_NA,
+          showIf: eq('q-d02a-demora', '1'),
           required: true,
           hint: 'INSTRUCCIÓN AL MYSTERY: Consulte al marketplace si hay compensación por la demora sufrida.',
         },
@@ -380,7 +405,7 @@ export const parte2: SurveySection = {
             { value: '3', label: 'Puntos para beneficios y suscripciones' },
             { value: '4', label: 'Otra ¿Cuál?' },
           ],
-          showIf: eq('q55e-compensacion', '1'),
+          showIf: and(eq('q-d02a-demora', '1'), eq('q55e-compensacion', '1')),
           required: true,
         },
         {
@@ -388,7 +413,10 @@ export const parte2: SurveySection = {
           codigoOriginal: 'D07.1-otra',
           text: 'D07.1. Especifique otra compensación',
           type: 'text',
-          showIf: eq('q55e1-tipo-compensacion', '4'),
+          showIf: and(
+            eq('q-d02a-demora', '1'),
+            eq('q55e1-tipo-compensacion', '4')
+          ),
           required: true,
         },
         {
@@ -396,12 +424,10 @@ export const parte2: SurveySection = {
           codigoOriginal: 'D07.2',
           text: 'D07.2. ¿Cuál es el monto de la compensación?',
           type: 'number',
-          showIf: {
-            any: [
-              eq('q55e1-tipo-compensacion', '1'),
-              eq('q55e1-tipo-compensacion', '2'),
-            ],
-          },
+          showIf: and(
+            eq('q-d02a-demora', '1'),
+            eq('q55e1-tipo-compensacion', '1', '2')
+          ),
           required: true,
         },
         {
@@ -409,6 +435,7 @@ export const parte2: SurveySection = {
           codigoOriginal: 'D08',
           text: 'D08. Adjunte capturas de todas las comunicaciones con atención al cliente.',
           type: 'evidence',
+          showIf: eq('q-d02a-demora', '1'),
           required: false,
           hint: 'Ejemplos: chats con atención al cliente y correos electrónicos recibidos con información del caso.',
         },

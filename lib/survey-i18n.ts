@@ -81,6 +81,10 @@ const UI: Record<string, Record<Lang, string>> = {
     es: 'La foto no parece coincidir con lo pedido. Podés dejarla o subir otra.',
     pt: 'A foto não parece corresponder ao pedido. Pode mantê-la ou enviar outra.',
   },
+  evidenceInvalidBlocked: {
+    es: 'Esta evidencia no es válida. Subí otra captura que demuestre lo pedido para poder continuar.',
+    pt: 'Esta evidência não é válida. Envie outra captura que demonstre o pedido para poder continuar.',
+  },
   evidenceDoubt: {
     es: 'No estamos seguros de que la foto coincida con lo pedido. Revisala si podés.',
     pt: 'Não temos a certeza de que a foto corresponda ao pedido. Verifique se puder.',
