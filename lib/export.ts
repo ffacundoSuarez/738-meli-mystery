@@ -3,6 +3,7 @@ import { getAnswerLabel, isEvidence, formatQuestionText } from './format';
 import {
   getAllQuestions,
   getAllQuestionsFromSection,
+  isClientVisibleQuestion,
   isQuestionVisible,
 } from './survey-logic';
 import { getScreeningSnapshot } from './survey-snapshot';
@@ -40,8 +41,11 @@ type BuildOptions = {
 
 /** Arma encabezados y filas para CSV/Excel/PDF */
 function buildExportRows(responses: ExportRow[], options: BuildOptions = {}) {
-  const questions = getAllQuestions(surveySections);
   const review = Boolean(options.review);
+  // En export de cliente (/resultados) se omiten preguntas internalOnly
+  const questions = getAllQuestions(surveySections).filter(
+    (q) => review || isClientVisibleQuestion(q)
+  );
 
   const headers = review
     ? [

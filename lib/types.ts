@@ -99,6 +99,16 @@ export interface Question {
   lockedRules?: { if: Condition; value: AnswerValue }[];
   /** Valor derivado; se mergea en answers antes de persistir */
   computed?: (answers: Record<string, AnswerValue>) => AnswerValue;
+  /**
+   * Control interno: visible en dashboard/revisión, oculto en /resultados
+   * y en exports de cliente.
+   */
+  internalOnly?: boolean;
+  /**
+   * Candado de evidencia: si la IA marca invalid (y no hay ok),
+   * la pregunta no cuenta como respondida y el shopper no avanza.
+   */
+  evidenceGate?: 'block-invalid';
 }
 
 /** Módulo visual dentro de una parte (fluye uno tras otro) */

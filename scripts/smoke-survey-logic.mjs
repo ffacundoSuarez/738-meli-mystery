@@ -143,10 +143,26 @@ if (evaluateCondition(d01Gate, { 'q-d00-cambio-fecha': '2' }) !== false) {
   console.log('OK D00=2 hides D01');
 }
 
-// D03–D04 solo si D02 = 1
+// D02a: demora; D02–D08 solo si D02a = 1
+const d02aGate = { questionId: 'q-d02a-demora', values: ['1'] };
+if (evaluateCondition(d02aGate, { 'q-d02a-demora': '1' }) !== true) {
+  console.error('FAIL D02a=1 should show contact block');
+  failed++;
+} else {
+  console.log('OK D02a=1 shows contact block');
+}
+if (evaluateCondition(d02aGate, { 'q-d02a-demora': '2' }) !== false) {
+  console.error('FAIL D02a=2 should hide contact block (skip to E01)');
+  failed++;
+} else {
+  console.log('OK D02a=2 hides contact block');
+}
+
+// D03–D04 solo si D02 = 1 (y en config real también D02a = 1)
 const d02Gate = { questionId: 'q55-1-contactar-vendedor', values: ['1'] };
 const d031 = {
   all: [
+    { questionId: 'q-d02a-demora', values: ['1'] },
     { questionId: 'q55-1-contactar-vendedor', values: ['1'] },
     { questionId: 'q55a-facilidad', operator: 'gte', values: ['0'] },
     { questionId: 'q55a-facilidad', operator: 'lte', values: ['6'] },
@@ -166,6 +182,7 @@ if (evaluateCondition(d02Gate, { 'q55-1-contactar-vendedor': '2' }) !== false) {
 }
 if (
   evaluateCondition(d031, {
+    'q-d02a-demora': '1',
     'q55-1-contactar-vendedor': '1',
     'q55a-facilidad': '4',
   }) !== true
@@ -177,6 +194,7 @@ if (
 }
 if (
   evaluateCondition(d031, {
+    'q-d02a-demora': '1',
     'q55-1-contactar-vendedor': '2',
     'q55a-facilidad': '4',
   }) !== false
@@ -185,6 +203,18 @@ if (
   failed++;
 } else {
   console.log('OK D02=2 hides D03.1');
+}
+if (
+  evaluateCondition(d031, {
+    'q-d02a-demora': '2',
+    'q55-1-contactar-vendedor': '1',
+    'q55a-facilidad': '4',
+  }) !== false
+) {
+  console.error('FAIL D02a=2 should hide D03.1 even if D02=1');
+  failed++;
+} else {
+  console.log('OK D02a=2 hides D03.1');
 }
 
 // A11.B solo si A11.1 = dólares (código 3); reemplaza A11 en F13.3

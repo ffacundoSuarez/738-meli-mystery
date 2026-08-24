@@ -1,5 +1,5 @@
 import { supabase, EVIDENCE_BUCKET } from './supabase/client';
-import { HEADER_FIELDS } from './survey-config';
+import { HEADER_FIELDS, surveySections } from './survey-config';
 import { getOpsPasscode, requireOpsPasscode } from './auth';
 import {
   AnswerValue,
@@ -13,6 +13,7 @@ import {
   StagesMap,
   SurveyResponse,
 } from './types';
+import { getAllQuestions, stripInternalAnswers } from './survey-logic';
 
 // --- Mapeo JSON ↔ modelo de la app ----------------------------------------
 
@@ -134,7 +135,14 @@ export async function saveStageByToken(
 export async function getPublicResults(): Promise<PublicResult[]> {
   const { data, error } = await supabase.rpc('meli_get_public_results');
   if (error) throw error;
-  return ((data as Record<string, unknown>[]) || []).map(parsePublicResult);
+  const questions = getAllQuestions(surveySections);
+  return ((data as Record<string, unknown>[]) || []).map((raw) => {
+    const result = parsePublicResult(raw);
+    return {
+      ...result,
+      answers: stripInternalAnswers(result.answers, questions),
+    };
+  });
 }
 
 // --- Admin (passcode) -----------------------------------------------------

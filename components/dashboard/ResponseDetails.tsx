@@ -39,6 +39,7 @@ import {
 import {
   getVisibleMatrixRows,
   getVisibleQuestions,
+  isClientVisibleQuestion,
   isModuleVisible,
   applyComputedAnswers,
   getAllQuestions,
@@ -488,9 +489,10 @@ export function ResponseDetails({
 
     const questions = getVisibleQuestions(module, activeAnswers).filter(
       (q) =>
-        stageWasSubmitted(stageStatus) ||
-        mode === 'results' ||
-        hasAnswerValue(activeAnswers[q.id])
+        (mode !== 'results' || isClientVisibleQuestion(q)) &&
+        (stageWasSubmitted(stageStatus) ||
+          mode === 'results' ||
+          hasAnswerValue(activeAnswers[q.id]))
     );
 
     if (questions.length === 0) return null;
