@@ -83,8 +83,13 @@ export interface Question {
   minTime?: string;
   /** Límite superior inclusivo para type time (HH:MM) */
   maxTime?: string;
-  /** Validación extra de contenido (p. ej. historial de tracking C07) */
-  validate?: 'trackingHistory';
+  /**
+   * Validación extra de contenido:
+   * - trackingHistory (C07)
+   * - listingUrl (A05)
+   * - purchaseCode (A06)
+   */
+  validate?: 'trackingHistory' | 'listingUrl' | 'purchaseCode';
   matrixRows?: MatrixRow[];
   matrixColumns?: QuestionOption[];
   /** Precarga si el campo está vacío; no pisa una respuesta ya guardada */
@@ -97,6 +102,11 @@ export interface Question {
    * Tiene prioridad sobre lockedIf/lockedValue cuando hay match.
    */
   lockedRules?: { if: Condition; value: AnswerValue }[];
+  /**
+   * Fija marketplace (A07) o ciudad (A09) desde el título de la encuesta
+   * (`nombre-apellido`) cuando el parse es confiable.
+   */
+  assignmentLock?: 'marketplace' | 'city';
   /** Valor derivado; se mergea en answers antes de persistir */
   computed?: (answers: Record<string, AnswerValue>) => AnswerValue;
   /**

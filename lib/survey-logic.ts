@@ -8,6 +8,13 @@ import {
   SurveyModule,
   SurveySection,
 } from './types';
+import { lockedValueFromAssignment } from './survey-config/assignment-title';
+import {
+  parseListingUrl,
+  validatePurchaseCode,
+  type ListingUrlMessageKey,
+  type PurchaseCodeMessageKey,
+} from './survey-config/listing-url';
 
 /** ¿El valor es una respuesta de matriz? */
 export function isMatrixAnswer(value: AnswerValue): value is Record<string, string> {
@@ -135,7 +142,8 @@ export function applyComputedAnswers(
 
 /**
  * Resuelve el valor bloqueado de una pregunta: primera regla en lockedRules
- * que matchea, o lockedIf + lockedValue. undefined = no bloqueada.
+ * que matchea, assignmentLock desde el título, o lockedIf + lockedValue.
+ * undefined = no bloqueada.
  */
 export function getLockedValue(
   question: Question,
@@ -147,6 +155,13 @@ export function getLockedValue(
         return rule.value;
       }
     }
+  }
+  if (question.assignmentLock) {
+    const fromTitle = lockedValueFromAssignment(
+      question.assignmentLock,
+      answers
+    );
+    if (fromTitle !== undefined) return fromTitle;
   }
   if (
     question.lockedIf !== undefined &&
@@ -492,6 +507,14 @@ export interface TrackingHistoryValidation {
   messageKey?: 'trackingHistoryTooShort' | 'trackingHistoryWeakStructure';
 }
 
+export interface FieldValidation {
+  level: ValidationLevel;
+  messageKey?:
+    | TrackingHistoryValidation['messageKey']
+    | ListingUrlMessageKey
+    | PurchaseCodeMessageKey;
+}
+
 const TRACKING_TRASH =
   /^(test|asdf|xxx+|aaa+|hola|ok|n\/a|na|ninguno|\.+|123+|abc+)$/i;
 
@@ -548,6 +571,38 @@ export function validateTrackingHistory(text: string): TrackingHistoryValidation
   return { level: 'ok' };
 }
 
+/**
+ * Valida A05 contra marketplace (A07 o título) y país.
+ * error → no cuenta como respondida.
+ */
+export function validateListingUrlField(
+  raw: string,
+  answers: Record<string, AnswerValue>
+): FieldValidation {
+  const expectedMarketplace =
+    typeof answers['q8-competidor'] === 'string'
+      ? answers['q8-competidor']
+      : undefined;
+  const expectedCountry =
+    typeof answers['f1-pais'] === 'string' ? answers['f1-pais'] : undefined;
+
+  const result = parseListingUrl(raw, {
+    expectedMarketplace,
+    expectedCountry,
+  });
+  if (result.ok) return { level: 'ok' };
+  return { level: 'error', messageKey: result.messageKey };
+}
+
+/** Valida A06 (código de compra). */
+export function validatePurchaseCodeField(
+  raw: string
+): FieldValidation {
+  const result = validatePurchaseCode(raw);
+  if (result.level === 'ok') return { level: 'ok' };
+  return { level: 'error', messageKey: result.messageKey };
+}
+
 /** ¿La pregunta visible tiene respuesta completa y no vacía? */
 export function isQuestionAnswered(
   question: Question,
@@ -600,6 +655,20 @@ export function isQuestionAnswered(
     if (
       question.validate === 'trackingHistory' &&
       validateTrackingHistory(value).level === 'error'
+    ) {
+      return false;
+    }
+    // A05: URL de publicación inválida / imagen / marketplace o país incorrecto
+    if (
+      question.validate === 'listingUrl' &&
+      validateListingUrlField(value, answers).level === 'error'
+    ) {
+      return false;
+    }
+    // A06: punto / basura / demasiado corto
+    if (
+      question.validate === 'purchaseCode' &&
+      validatePurchaseCodeField(value).level === 'error'
     ) {
       return false;
     }

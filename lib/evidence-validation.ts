@@ -18,6 +18,10 @@ export interface EvidenceVisionContext {
   studyStage?: string;
   questionText?: string;
   hint?: string;
+  /** Valor de A19 (método de entrega seleccionado) */
+  selectedShippingMethod?: string;
+  /** Label legible de A19 */
+  selectedShippingLabel?: string;
 }
 
 /** Slug de A07 si es Amazon / Falabella / Temu. */
@@ -48,13 +52,22 @@ function studyStageForQuestion(
   return mod?.title || section.title;
 }
 
+const SHIPPING_METHOD_LABELS: Record<string, string> = {
+  '1': 'Envío Rápido con costo de envío (pago)',
+  '2': 'Envío Rápido sin costo de envío (gratis)',
+};
+
 /**
- * Arma el contexto de Vision desde las respuestas (A07, país, enunciado interpolado).
+ * Arma el contexto de Vision desde las respuestas (A07, país, A19, enunciado).
  */
 export function buildEvidenceVisionContext(
   question: Question,
   answers: Record<string, AnswerValue>
 ): EvidenceVisionContext {
+  const methodRaw = answers['q18c-metodo-entrega'];
+  const selectedShippingMethod =
+    typeof methodRaw === 'string' && methodRaw ? methodRaw : undefined;
+
   return {
     marketplace: normalizeMarketplace(answers[COMPETIDOR_QUESTION_ID]),
     country: normalizeCountry(answers['f1-pais']),
@@ -62,6 +75,10 @@ export function buildEvidenceVisionContext(
     studyStage: studyStageForQuestion(question.id, answers),
     questionText: interpolate(question.text, answers),
     hint: question.hint ? interpolate(question.hint, answers) : undefined,
+    selectedShippingMethod,
+    selectedShippingLabel: selectedShippingMethod
+      ? SHIPPING_METHOD_LABELS[selectedShippingMethod]
+      : undefined,
   };
 }
 
@@ -84,6 +101,8 @@ export async function validateEvidenceFile(
         country: context?.country,
         questionCode: context?.questionCode ?? question.codigoOriginal,
         studyStage: context?.studyStage,
+        selectedShippingMethod: context?.selectedShippingMethod,
+        selectedShippingLabel: context?.selectedShippingLabel,
       }),
     });
     if (!res.ok) {

@@ -12,8 +12,10 @@ import {
   PAISES,
   SI_NO_COD,
   VENDIDO_POR,
+  and,
   eq,
   evidenciasModule,
+  pais,
 } from './constants';
 import { naturalDaysBetween, usdFrom } from './computed';
 
@@ -75,6 +77,8 @@ export const parte1: SurveySection = {
           text: 'A05. Copie el enlace de la publicación (URL).',
           type: 'text',
           required: true,
+          validate: 'listingUrl',
+          hint: 'Pegá el link de la ficha del producto (no el de una imagen .jpg/.jpeg). Debe ser del marketplace de esta encuesta.',
         },
         {
           id: 'q06-codigo-compra',
@@ -82,6 +86,8 @@ export const parte1: SurveySection = {
           text: 'A06. Indique el código o identificador de la compra.',
           type: 'text',
           required: true,
+          validate: 'purchaseCode',
+          hint: 'Usá el código/ID real de la compra (mínimo 6 caracteres). No alcanza con un punto o “n/a”.',
         },
         {
           id: 'q8-competidor',
@@ -90,6 +96,7 @@ export const parte1: SurveySection = {
           type: 'single',
           options: COMPETIDORES,
           required: true,
+          assignmentLock: 'marketplace',
         },
         {
           id: 'q8a-prime-evidencia',
@@ -120,6 +127,7 @@ export const parte1: SurveySection = {
           type: 'single',
           options: CIUDADES,
           required: true,
+          assignmentLock: 'city',
         },
       ],
     },
@@ -257,6 +265,7 @@ export const parte1: SurveySection = {
           text: 'A18. ¿Cuántas opciones de envío están disponibles?',
           type: 'number',
           required: true,
+          hint: 'Contá solo opciones de envío a domicilio (no puntos de retiro / pickup / lockers).',
         },
         {
           id: 'q18b-foto-opciones',
@@ -264,6 +273,8 @@ export const parte1: SurveySection = {
           text: 'A18.1. Adjunte una captura de pantalla de todas las opciones de envío disponibles.',
           type: 'evidence',
           required: true,
+          evidenceGate: 'block-invalid',
+          hint: 'La captura debe mostrar las opciones a domicilio (métodos, fechas y costos). No alcanza con puntos de retiro.',
         },
         {
           id: 'q18c-metodo-entrega',
@@ -272,7 +283,7 @@ export const parte1: SurveySection = {
           type: 'single',
           options: METODOS_ENTREGA,
           required: true,
-          hint: 'INSTRUCCIÓN AL MYSTERY: Seleccione siempre la opción de entrega a domicilio más rápida. En compras Prime, seleccione la opción Prime gratuita a domicilio.',
+          hint: 'INSTRUCCIÓN AL MYSTERY: Seleccione siempre la opción de entrega a domicilio más rápida (no puntos de retiro). En compras Prime, seleccione la opción Prime gratuita a domicilio.',
         },
         {
           id: 'q18d-foto-metodo',
@@ -280,7 +291,8 @@ export const parte1: SurveySection = {
           text: 'A19.1. Adjunte una captura de pantalla de la opción de envío seleccionada.',
           type: 'evidence',
           required: true,
-          hint: 'Asegúrese de que la captura muestre todos los métodos disponibles, la promesa de entrega y el costo asociado a cada uno.',
+          evidenceGate: 'block-invalid',
+          hint: 'Asegúrese de que la captura muestre todos los métodos disponibles, la promesa de entrega y el costo asociado a cada uno. Debe verse que eligió a domicilio y la opción más rápida.',
         },
         {
           id: 'q19-precio-envio',
@@ -313,6 +325,12 @@ export const parte1: SurveySection = {
           type: 'number',
           required: true,
           hint: 'Escribí el número sin puntos ni comas de miles. Ejemplo: 87000',
+          lockedRules: [
+            {
+              if: and(eq('q8-competidor', 'falabella'), pais('1')),
+              value: '0',
+            },
+          ],
         },
         {
           id: 'q19a-1-moneda-impuestos',

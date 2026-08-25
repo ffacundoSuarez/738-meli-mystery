@@ -195,7 +195,13 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         const existing = await getResponseByToken(accessToken);
         if (!active) return;
         if (existing) {
-          const ans = existing.answers || {};
+          const ans = { ...(existing.answers || {}) };
+          if (
+            existing.nombreApellido &&
+            (!ans['nombre-apellido'] || ans['nombre-apellido'] === '')
+          ) {
+            ans['nombre-apellido'] = existing.nombreApellido;
+          }
           const flags = existing.reviewFlags || {};
           setAnswers(
             applyComputedAnswers(getAllQuestions(surveySections), ans)

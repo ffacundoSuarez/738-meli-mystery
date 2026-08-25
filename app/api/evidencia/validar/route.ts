@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
       country,
       questionCode,
       studyStage,
+      selectedShippingMethod,
+      selectedShippingLabel,
     } = body || {};
 
     if (
@@ -70,6 +72,16 @@ export async function POST(request: NextRequest) {
         studyStage:
           typeof studyStage === 'string' && studyStage.trim()
             ? studyStage.trim()
+            : undefined,
+        selectedShippingMethod:
+          typeof selectedShippingMethod === 'string' &&
+          selectedShippingMethod.trim()
+            ? selectedShippingMethod.trim()
+            : undefined,
+        selectedShippingLabel:
+          typeof selectedShippingLabel === 'string' &&
+          selectedShippingLabel.trim()
+            ? selectedShippingLabel.trim()
             : undefined,
       }),
       // Vision puede tardar

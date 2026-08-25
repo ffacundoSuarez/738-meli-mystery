@@ -75,6 +75,18 @@ import {
   hasAnyEvidences,
 } from '@/lib/evidence-zip';
 import { checkPostalCode, PostalCheckStatus } from '@/lib/survey-config/postal';
+import {
+  assignmentTitleFromAnswers,
+  checkAssignmentMatch,
+  parseAssignmentTitle,
+  type AssignmentCheckStatus,
+} from '@/lib/survey-config/assignment-title';
+import {
+  crossCheckPurchaseCodeWithUrl,
+  parseListingUrl,
+  slugLooksLikeTitle,
+  type PurchaseCodeUrlCrossStatus,
+} from '@/lib/survey-config/listing-url';
 
 export type ResponseDetailsMode = 'revision' | 'results';
 
@@ -201,6 +213,26 @@ function renderAnswerCell(
     return <span className="text-muted-foreground italic font-normal">Sin respuesta</span>;
   }
 
+  // A05 (y cualquier URL de texto): link clickeable + abrir en otra pestaña
+  if (
+    typeof answer === 'string' &&
+    (question.id === 'q05-link-publicacion' || question.validate === 'listingUrl')
+  ) {
+    const href = asHttpUrl(answer);
+    if (href) {
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-bold text-foreground break-all underline-offset-2 hover:underline"
+        >
+          {answer}
+        </a>
+      );
+    }
+  }
+
   return getAnswerLabel(question.id, answer as AnswerValue);
 }
 
@@ -228,6 +260,36 @@ const POSTAL_BADGE_COLORS: Record<PostalCheckStatus, string> = {
   city_mismatch: 'bg-amber-50 text-amber-800 border-amber-200',
   country_mismatch: 'bg-red-50 text-red-800 border-red-200',
 };
+
+const ASSIGNMENT_BADGE_COLORS: Record<AssignmentCheckStatus, string> = {
+  match: 'bg-green-50 text-green-800 border-green-200',
+  mismatch: 'bg-red-50 text-red-800 border-red-200',
+  country_mismatch: 'bg-red-50 text-red-800 border-red-200',
+  unparseable: 'bg-slate-50 text-slate-600 border-slate-200',
+};
+
+const URL_CROSS_BADGE_COLORS: Record<PurchaseCodeUrlCrossStatus, string> = {
+  match: 'bg-green-50 text-green-800 border-green-200',
+  no_id_in_url: 'bg-amber-50 text-amber-800 border-amber-200',
+  mismatch: 'bg-amber-50 text-amber-800 border-amber-200',
+  skip: '',
+};
+
+/** ¿La respuesta de texto parece una URL clickeable? */
+function asHttpUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    const href = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    const u = new URL(href);
+    if (!u.hostname) return null;
+    return u.href;
+  } catch {
+    return null;
+  }
+}
 
 /** Calcula el diff entre respuestas editadas y las guardadas */
 function getAnswersDiff(
@@ -282,6 +344,15 @@ export function ResponseDetails({
   const fechaFin =
     (response.answers['fecha-fin'] as string) || response.fechaFin || '';
 
+  /** Título de asignación parseado (ej. Temu · Concepción · Chile). */
+  const assignmentSummary = useMemo(() => {
+    const title =
+      assignmentTitleFromAnswers(activeAnswers) ||
+      response.nombreApellido ||
+      '';
+    return parseAssignmentTitle(title);
+  }, [activeAnswers, response.nombreApellido]);
+
   const reviewableSectionIds =
     mode === 'results'
       ? REVIEWABLE_SECTIONS.filter((id) => {
@@ -309,14 +380,19 @@ export function ResponseDetails({
   }, [response.id, response.reviewFlags]);
 
   useEffect(() => {
+    const base = { ...(response.answers || {}) };
+    // Asegura el título de asignación en answers para locks / badges
+    if (
+      response.nombreApellido &&
+      (!base['nombre-apellido'] || base['nombre-apellido'] === '')
+    ) {
+      base['nombre-apellido'] = response.nombreApellido;
+    }
     setEditedAnswers(
-      applyComputedAnswers(
-        getAllQuestions(surveySections),
-        response.answers || {}
-      )
+      applyComputedAnswers(getAllQuestions(surveySections), base)
     );
     setEditingIds(new Set());
-  }, [response.id, response.answers]);
+  }, [response.id, response.answers, response.nombreApellido]);
 
   useEffect(() => {
     setCurrentSectionId(getDefaultSectionId(stages, reviewableSectionIds));
@@ -546,6 +622,43 @@ export function ResponseDetails({
                     activeAnswers['q10-ciudad']
                   )
                 : null;
+            const assignmentCheck =
+              question.id === 'q8-competidor'
+                ? checkAssignmentMatch(activeAnswers, 'marketplace')
+                : question.id === 'q10-ciudad'
+                  ? checkAssignmentMatch(activeAnswers, 'city')
+                  : question.id === 'f1-pais'
+                    ? checkAssignmentMatch(activeAnswers, 'country')
+                    : null;
+            const listingParsed =
+              (question.id === 'q05-link-publicacion' ||
+                question.id === 'q04-titulo-publicacion') &&
+              typeof activeAnswers['q05-link-publicacion'] === 'string'
+                ? parseListingUrl(activeAnswers['q05-link-publicacion'], {
+                    expectedMarketplace:
+                      typeof activeAnswers['q8-competidor'] === 'string'
+                        ? activeAnswers['q8-competidor']
+                        : undefined,
+                    expectedCountry:
+                      typeof activeAnswers['f1-pais'] === 'string'
+                        ? activeAnswers['f1-pais']
+                        : undefined,
+                  })
+                : null;
+            const purchaseCross =
+              question.id === 'q06-codigo-compra'
+                ? crossCheckPurchaseCodeWithUrl(
+                    activeAnswers['q06-codigo-compra'],
+                    activeAnswers['q05-link-publicacion']
+                  )
+                : null;
+            const titleSlugOk =
+              question.id === 'q04-titulo-publicacion' && listingParsed?.ok
+                ? slugLooksLikeTitle(
+                    listingParsed.slug,
+                    activeAnswers['q04-titulo-publicacion']
+                  )
+                : null;
 
             const dominantBorder =
               wasCorrected
@@ -628,6 +741,80 @@ export function ResponseDetails({
                           )}
                         >
                           {postalCheck.label}
+                        </Badge>
+                      )}
+                      {assignmentCheck && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-[10px] py-0 h-5 max-w-full whitespace-normal text-left',
+                            ASSIGNMENT_BADGE_COLORS[assignmentCheck.status]
+                          )}
+                        >
+                          {assignmentCheck.label}
+                        </Badge>
+                      )}
+                      {listingParsed?.ok &&
+                        question.id === 'q05-link-publicacion' && (
+                        <>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
+                          >
+                            {listingParsed.host}
+                            {listingParsed.countryCode === '1'
+                              ? ' · CL'
+                              : listingParsed.countryCode === '2'
+                                ? ' · CO'
+                                : ''}
+                          </Badge>
+                          {listingParsed.productId && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] py-0 h-5 bg-slate-50 text-slate-700 border-slate-200"
+                            >
+                              ID: {listingParsed.productId}
+                            </Badge>
+                          )}
+                        </>
+                      )}
+                      {listingParsed &&
+                        !listingParsed.ok &&
+                        question.id === 'q05-link-publicacion' && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] py-0 h-5 max-w-full whitespace-normal text-left bg-red-50 text-red-800 border-red-200"
+                        >
+                          URL inválida
+                        </Badge>
+                      )}
+                      {purchaseCross &&
+                        purchaseCross.status !== 'skip' &&
+                        purchaseCross.label && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'text-[10px] py-0 h-5 max-w-full whitespace-normal text-left',
+                              URL_CROSS_BADGE_COLORS[purchaseCross.status]
+                            )}
+                          >
+                            {purchaseCross.label}
+                          </Badge>
+                        )}
+                      {titleSlugOk === true && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
+                        >
+                          Título ≈ slug URL
+                        </Badge>
+                      )}
+                      {titleSlugOk === false && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] py-0 h-5 bg-amber-50 text-amber-800 border-amber-200"
+                        >
+                          Título ≠ slug URL
                         </Badge>
                       )}
                       {questionChanged && (
@@ -898,6 +1085,15 @@ export function ResponseDetails({
 
   return (
     <div className="space-y-5">
+      {assignmentSummary && (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+          <span className="text-muted-foreground">Asignación: </span>
+          <span className="font-semibold text-foreground">
+            {assignmentSummary.summary}
+          </span>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button
           size="sm"
