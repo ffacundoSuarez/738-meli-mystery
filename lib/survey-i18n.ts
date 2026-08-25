@@ -97,6 +97,38 @@ const UI: Record<string, Record<Lang, string>> = {
     es: 'El texto no parece un historial de tracking. Incluya ID/rastreo, fechas u horarios y estados del envío.',
     pt: 'O texto não parece um histórico de tracking. Inclua ID/rastreio, datas ou horários e estados do envio.',
   },
+  listingUrlInvalid: {
+    es: 'Pegá el enlace completo de la publicación (https://…), no un texto suelto.',
+    pt: 'Cole o link completo da publicação (https://…), não um texto solto.',
+  },
+  listingUrlImage: {
+    es: 'Eso parece el link de una imagen. Pegá el enlace de la ficha del producto, no el .jpg/.jpeg.',
+    pt: 'Isso parece o link de uma imagem. Cole o link da ficha do produto, não o .jpg/.jpeg.',
+  },
+  listingUrlUnknownHost: {
+    es: 'El link no es de Temu, Falabella ni Amazon. Usá la URL del marketplace de esta encuesta.',
+    pt: 'O link não é de Temu, Falabella nem Amazon. Use a URL do marketplace desta pesquisa.',
+  },
+  listingUrlNotProduct: {
+    es: 'La URL no parece una ficha de producto. Abrí el detalle del producto y copiá ese enlace.',
+    pt: 'A URL não parece uma ficha de produto. Abra o detalhe do produto e copie esse link.',
+  },
+  listingUrlMarketplaceMismatch: {
+    es: 'El link es de otro marketplace. Debe coincidir con el marketplace de esta encuesta.',
+    pt: 'O link é de outro marketplace. Deve coincidir com o marketplace desta pesquisa.',
+  },
+  listingUrlCountryMismatch: {
+    es: 'El link es de otro país (ej. /cl/ vs /co/). Debe coincidir con el país de esta encuesta.',
+    pt: 'O link é de outro país (ex. /cl/ vs /co/). Deve coincidir com o país desta pesquisa.',
+  },
+  purchaseCodeTooShort: {
+    es: 'Indicá el código o identificador real de la compra (mínimo 6 caracteres).',
+    pt: 'Indique o código ou identificador real da compra (mínimo 6 caracteres).',
+  },
+  purchaseCodeTrash: {
+    es: 'Eso no es un código de compra válido. No uses “.”, “n/a” ni textos de prueba.',
+    pt: 'Isso não é um código de compra válido. Não use “.”, “n/a” nem textos de teste.',
+  },
 };
 
 export function t(key: keyof typeof UI, lang: Lang): string {

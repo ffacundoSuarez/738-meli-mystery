@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { DateTimePicker } from '@/components/survey/DateTimePicker';
-import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory, getLockedValue, isQuestionLocked } from '@/lib/survey-logic';
+import { getOrderedOptions, getVisibleMatrixRows, isTimeInRange, isDateOutsideFieldPeriod, getFieldPeriodBounds, validateTrackingHistory, validateListingUrlField, validatePurchaseCodeField, getLockedValue, isQuestionLocked } from '@/lib/survey-logic';
 import {
   amountUsdPreview,
   isImplausiblyLowLocalAmount,
@@ -155,17 +155,38 @@ export function QuestionInput({
   }
 
   if (question.type === 'text') {
+    const textValue = (value as string) || '';
+    const fieldCheck =
+      textValue.trim() && question.validate === 'listingUrl'
+        ? validateListingUrlField(textValue, answers)
+        : textValue.trim() && question.validate === 'purchaseCode'
+          ? validatePurchaseCodeField(textValue)
+          : null;
+    const fieldMsg =
+      fieldCheck && fieldCheck.level === 'error' && fieldCheck.messageKey
+        ? t(fieldCheck.messageKey, lang)
+        : null;
+
     return (
-      <Input
-        type="text"
-        value={(value as string) || ''}
-        onChange={(e) => {
-          if (!isComputed) updateValue(e.target.value);
-        }}
-        readOnly={isComputed}
-        placeholder={t('writeAnswer', lang)}
-        className={isComputed ? 'bg-muted/50 text-muted-foreground' : undefined}
-      />
+      <div className="space-y-1.5">
+        <Input
+          type="text"
+          value={textValue}
+          onChange={(e) => {
+            if (!isComputed) updateValue(e.target.value);
+          }}
+          readOnly={isComputed || isLocked}
+          placeholder={t('writeAnswer', lang)}
+          className={
+            isComputed || isLocked
+              ? 'bg-muted/50 text-muted-foreground'
+              : undefined
+          }
+        />
+        {fieldMsg && (
+          <p className="text-sm text-destructive">{fieldMsg}</p>
+        )}
+      </div>
     );
   }
 
@@ -266,14 +287,17 @@ export function QuestionInput({
   }
 
   if (question.type === 'number') {
+    const displayValue =
+      isLocked && lockedValue !== undefined ? lockedValue : value;
     const monedaCode = monedaCodeForAmount(question.id, answers);
     const preview =
-      !isComputed && monedaCode
-        ? amountUsdPreview(value, monedaCode)
+      !isComputed && !isLocked && monedaCode
+        ? amountUsdPreview(displayValue, monedaCode)
         : null;
     const tooLow =
       !isComputed &&
-      isImplausiblyLowLocalAmount(question.id, value, monedaCode);
+      !isLocked &&
+      isImplausiblyLowLocalAmount(question.id, displayValue, monedaCode);
     const showTotalsWarn =
       question.id === 'q46c-precio-final' && totalsMatch(answers) === false;
 
@@ -283,13 +307,17 @@ export function QuestionInput({
           type="number"
           inputMode="decimal"
           min={0}
-          value={(value as string) || ''}
+          value={(displayValue as string) || ''}
           onChange={(e) => {
-            if (!isComputed) updateValue(e.target.value);
+            if (!isComputed && !isLocked) updateValue(e.target.value);
           }}
-          readOnly={isComputed}
+          readOnly={isComputed || isLocked}
           placeholder={t('writeAnswer', lang)}
-          className={isComputed ? 'bg-muted/50 text-muted-foreground' : undefined}
+          className={
+            isComputed || isLocked
+              ? 'bg-muted/50 text-muted-foreground'
+              : undefined
+          }
         />
         {preview && (
           <p className="text-sm text-muted-foreground">

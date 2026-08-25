@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "smoke:logic": "node scripts/smoke-survey-logic.mjs",
+    "smoke:assignment": "npx tsx scripts/smoke-assignment-url.ts",
     "verify:fidelity": "npx tsx scripts/verificar-fidelidad.ts"
   },
   "dependencies": {
