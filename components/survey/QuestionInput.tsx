@@ -37,6 +37,11 @@ export interface QuestionInputProps {
   uploadProgress?: number;
   onUploadEvidence?: (questionId: string, files: FileList | null) => void;
   onRemoveEvidence?: (questionId: string, url: string) => void;
+  /**
+   * Mostrar mensajes de validación (IA, URL, etc.).
+   * En encuesta shopper se desactiva para no confundir; en dashboard queda true.
+   */
+  showValidationFeedback?: boolean;
 }
 
 /** Renderiza el control editable según el tipo de pregunta */
@@ -51,6 +56,7 @@ export function QuestionInput({
   uploadProgress = 0,
   onUploadEvidence,
   onRemoveEvidence,
+  showValidationFeedback = true,
 }: QuestionInputProps) {
   const options = useMemo(
     () => getOrderedOptions(question, answers, optionSeed),
@@ -156,8 +162,11 @@ export function QuestionInput({
 
   if (question.type === 'text') {
     const textValue = (value as string) || '';
+    // listingUrl: solo feedback en dashboard; purchaseCode siempre (sigue bloqueando)
     const fieldCheck =
-      textValue.trim() && question.validate === 'listingUrl'
+      textValue.trim() &&
+      question.validate === 'listingUrl' &&
+      showValidationFeedback
         ? validateListingUrlField(textValue, answers)
         : textValue.trim() && question.validate === 'purchaseCode'
           ? validatePurchaseCodeField(textValue)
@@ -477,23 +486,17 @@ export function QuestionInput({
                 >
                   {file.name}
                 </a>
-                {file.validation?.status === 'invalid' && (
+                {showValidationFeedback && file.validation?.status === 'invalid' && (
                   <p className="text-xs text-destructive">
-                    {file.validation.reason ||
-                      t(
-                        question.evidenceGate === 'block-invalid'
-                          ? 'evidenceInvalidBlocked'
-                          : 'evidenceInvalid',
-                        lang
-                      )}
+                    {file.validation.reason || t('evidenceInvalid', lang)}
                   </p>
                 )}
-                {file.validation?.status === 'doubt' && (
+                {showValidationFeedback && file.validation?.status === 'doubt' && (
                   <p className="text-xs text-amber-600 dark:text-amber-500">
                     {file.validation.reason || t('evidenceDoubt', lang)}
                   </p>
                 )}
-                {file.validation?.status === 'ok' && (
+                {showValidationFeedback && file.validation?.status === 'ok' && (
                   <p className="text-xs text-green-700 dark:text-green-500">
                     Evidencia OK
                   </p>

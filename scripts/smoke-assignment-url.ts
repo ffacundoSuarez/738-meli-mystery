@@ -197,13 +197,13 @@ const a05Q: Question = {
   validate: 'listingUrl',
 };
 assert(
-  !isQuestionAnswered(a05Q, {
+  isQuestionAnswered(a05Q, {
     'q05-link-publicacion':
       'https://www.temu.com/cl/foto.jpeg?spec_gallery_id=1',
     'q8-competidor': 'temu',
     'f1-pais': '1',
   }),
-  'isQuestionAnswered bloquea jpeg'
+  'isQuestionAnswered acepta jpeg (ya no bloquea A05)'
 );
 
 const cross = crossCheckPurchaseCodeWithUrl(

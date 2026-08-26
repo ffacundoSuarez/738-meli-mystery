@@ -108,7 +108,6 @@ export const parte1: SurveySection = {
           showIf: eq('q8-competidor', 'amazon'),
           required: true,
           internalOnly: true,
-          evidenceGate: 'block-invalid',
           hint: 'Cualquier captura que demuestre membresía o compra Prime: cuenta, checkout, pedido, envío o beneficios. No hace falta un logo fijo; tiene que entenderse que es Prime y no Amazon sin Prime.',
           hintPt:
             'Qualquer captura que demonstre adesão ou compra Prime: conta, checkout, pedido, envio ou benefícios. Não precisa de um logo fixo; tem de perceber-se que é Prime e não Amazon sem Prime.',
@@ -273,7 +272,6 @@ export const parte1: SurveySection = {
           text: 'A18.1. Adjunte una captura de pantalla de todas las opciones de envío disponibles.',
           type: 'evidence',
           required: true,
-          evidenceGate: 'block-invalid',
           hint: 'La captura debe mostrar las opciones a domicilio (métodos, fechas y costos). No alcanza con puntos de retiro.',
         },
         {
@@ -291,7 +289,6 @@ export const parte1: SurveySection = {
           text: 'A19.1. Adjunte una captura de pantalla de la opción de envío seleccionada.',
           type: 'evidence',
           required: true,
-          evidenceGate: 'block-invalid',
           hint: 'Asegúrese de que la captura muestre todos los métodos disponibles, la promesa de entrega y el costo asociado a cada uno. Debe verse que eligió a domicilio y la opción más rápida.',
         },
         {
