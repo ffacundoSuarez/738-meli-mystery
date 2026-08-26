@@ -1,6 +1,7 @@
 import { supabase, EVIDENCE_BUCKET } from './supabase/client';
 import { HEADER_FIELDS, surveySections } from './survey-config';
-import { getOpsPasscode, requireOpsPasscode } from './auth';
+import { getOpsPasscode, requireOpsPasscode, setOpsPasscode } from './auth';
+import { getResultadosCredentials, requireResultadosCredentials } from './resultados-auth';
 import {
   AnswerValue,
   EvidenceFile,
@@ -132,9 +133,8 @@ export async function saveStageByToken(
 
 // --- Vista pública --------------------------------------------------------
 
-export async function getPublicResults(): Promise<PublicResult[]> {
-  const { data, error } = await supabase.rpc('meli_get_public_results');
-  if (error) throw error;
+/** Mapea el JSON del RPC meli_get_public_results al modelo de la app. */
+export function mapPublicResultsFromRpc(data: unknown): PublicResult[] {
   const questions = getAllQuestions(surveySections);
   return ((data as Record<string, unknown>[]) || []).map((raw) => {
     const result = parsePublicResult(raw);
@@ -143,6 +143,84 @@ export async function getPublicResults(): Promise<PublicResult[]> {
       answers: stripInternalAnswers(result.answers, questions),
     };
   });
+}
+
+/** Error de auth al cargar /resultados (redirect según code). */
+export class ResultadosAuthError extends Error {
+  constructor(
+    message: string,
+    public readonly code: 'client_session' | 'ops_unauthorized' | 'passcode_invalid'
+  ) {
+    super(message);
+    this.name = 'ResultadosAuthError';
+  }
+}
+
+export type ResultadosLoadResult = {
+  results: PublicResult[];
+  isOpsViewer: boolean;
+};
+
+/** Resultados — Ops (passcode o cookie), cliente (email+password), o BFF Ops en pestaña nueva. */
+export async function getResultados(): Promise<ResultadosLoadResult> {
+  const opsPasscode = getOpsPasscode();
+  if (opsPasscode) {
+    const { data, error } = await supabase.rpc('meli_get_public_results_ops', {
+      p_passcode: opsPasscode,
+    });
+    if (error) {
+      if (error.message?.includes('Passcode inválido')) {
+        throw new ResultadosAuthError('Passcode inválido', 'passcode_invalid');
+      }
+      throw error;
+    }
+    return { results: mapPublicResultsFromRpc(data), isOpsViewer: true };
+  }
+
+  const clientCreds = getResultadosCredentials();
+  if (clientCreds) {
+    const { data, error } = await supabase.rpc('meli_get_public_results_client', {
+      p_username: clientCreds.username,
+      p_password: clientCreds.password,
+    });
+    if (error) throw error;
+    return { results: mapPublicResultsFromRpc(data), isOpsViewer: false };
+  }
+
+  const res = await fetch('/api/resultados/ops');
+  if (res.ok) {
+    const results = (await res.json()) as PublicResult[];
+    // Pestaña nueva: guardar passcode en localStorage para que /dashboard siga funcionando
+    const sync = await fetch('/api/acceso/sync');
+    if (sync.ok) {
+      const { passcode } = (await sync.json()) as { passcode: string };
+      setOpsPasscode(passcode);
+    }
+    return { results, isOpsViewer: true };
+  }
+  if (res.status === 401) {
+    throw new ResultadosAuthError('Sesión expirada. Volvé a ingresar.', 'client_session');
+  }
+
+  throw new ResultadosAuthError('Sesión expirada. Volvé a ingresar.', 'client_session');
+}
+
+/** Resultados cliente — credenciales en sessionStorage + RPC gated (patrón Ops). */
+export async function getResultadosClient(): Promise<PublicResult[]> {
+  const { username, password } = requireResultadosCredentials();
+  const { data, error } = await supabase.rpc('meli_get_public_results_client', {
+    p_username: username,
+    p_password: password,
+  });
+  if (error) throw error;
+  return mapPublicResultsFromRpc(data);
+}
+
+/** @deprecated Sin grant anon — usar getResultadosClient(). */
+export async function getPublicResults(): Promise<PublicResult[]> {
+  const { data, error } = await supabase.rpc('meli_get_public_results');
+  if (error) throw error;
+  return mapPublicResultsFromRpc(data);
 }
 
 // --- Admin (passcode) -----------------------------------------------------

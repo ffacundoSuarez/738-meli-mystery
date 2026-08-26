@@ -1,17 +1,30 @@
-// Gestión del passcode de ops en el browser (para llamadas RPC admin_*)
+// Passcode de ops en el browser (llamadas RPC admin_*).
+// localStorage para compartir sesión entre pestañas (ej. vista cliente en target="_blank").
 
 const PASSCODE_KEY = 'meli_ops_passcode';
 
+/** Migra passcode legacy de sessionStorage a localStorage (una sola vez). */
+function migratePasscodeFromSessionStorage(): void {
+  const legacy = sessionStorage.getItem(PASSCODE_KEY);
+  if (legacy) {
+    localStorage.setItem(PASSCODE_KEY, legacy);
+    sessionStorage.removeItem(PASSCODE_KEY);
+  }
+}
+
 export function getOpsPasscode(): string | null {
   if (typeof window === 'undefined') return null;
-  return sessionStorage.getItem(PASSCODE_KEY);
+  migratePasscodeFromSessionStorage();
+  return localStorage.getItem(PASSCODE_KEY);
 }
 
 export function setOpsPasscode(passcode: string): void {
-  sessionStorage.setItem(PASSCODE_KEY, passcode);
+  localStorage.setItem(PASSCODE_KEY, passcode);
+  sessionStorage.removeItem(PASSCODE_KEY);
 }
 
 export function clearOpsPasscode(): void {
+  localStorage.removeItem(PASSCODE_KEY);
   sessionStorage.removeItem(PASSCODE_KEY);
 }
 
