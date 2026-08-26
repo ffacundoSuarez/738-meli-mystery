@@ -297,26 +297,12 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         );
 
         if (!skipVision && question && file.type.startsWith('image/')) {
-          const validation = await validateEvidenceFile(
+          // Persistir resultado de IA para el dashboard; no mostrar feedback al shopper.
+          uploadedFile.validation = await validateEvidenceFile(
             uploadedFile,
             question,
             buildEvidenceVisionContext(question, answers)
           );
-          uploadedFile.validation = validation;
-          if (validation.status === 'invalid') {
-            const blocked = question.evidenceGate === 'block-invalid';
-            toast.warning(
-              validation.reason && validation.reason !== 'validation_unavailable'
-                ? validation.reason
-                : t(blocked ? 'evidenceInvalidBlocked' : 'evidenceInvalid', lang)
-            );
-          } else if (validation.status === 'doubt') {
-            toast.warning(
-              validation.reason && validation.reason !== 'validation_unavailable'
-                ? validation.reason
-                : t('evidenceDoubt', lang)
-            );
-          }
         }
 
         uploaded.push(uploadedFile);
@@ -599,6 +585,7 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
           uploadProgress={uploadProgress[question.id]}
           onUploadEvidence={handleEvidenceUpload}
           onRemoveEvidence={removeEvidence}
+          showValidationFeedback={false}
         />
       </div>
     );

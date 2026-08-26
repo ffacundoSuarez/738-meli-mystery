@@ -332,32 +332,6 @@ export function stripInternalAnswers(
   return next;
 }
 
-/**
- * ¿La evidencia cumple el candado block-invalid?
- * - Sin archivos → false (si required lo maneja el caller).
- * - Al menos un ok → true.
- * - Algún invalid y ninguno ok → false.
- * - Solo doubt / sin validation → true (fail-soft).
- */
-export function evidencePassesGate(
-  value: AnswerValue | undefined,
-  gate: 'block-invalid' | undefined
-): boolean {
-  if (!gate) return true;
-  if (value === undefined || !isEvidenceValue(value)) return true;
-  const files = value as { validation?: { status?: string } }[];
-  let hasOk = false;
-  let hasInvalid = false;
-  for (const file of files) {
-    const status = file.validation?.status;
-    if (status === 'ok') hasOk = true;
-    if (status === 'invalid') hasInvalid = true;
-  }
-  if (hasOk) return true;
-  if (hasInvalid) return false;
-  return true;
-}
-
 /** Busca pregunta por id */
 export function findQuestionInSections(
   sections: SurveySection[],
@@ -630,11 +604,10 @@ export function isQuestionAnswered(
   }
 
   if (question.type === 'evidence') {
-    // Las evidencias son opcionales salvo que se marquen required:
-    // permite avanzar/enviar la parte aunque no se adjunten archivos.
+    // Las evidencias son opcionales salvo que se marquen required.
+    // La IA puede marcar invalid/doubt pero no bloquea el avance.
     if (question.required && !isEvidenceValue(value)) return false;
-    if (!question.required && !isEvidenceValue(value)) return true;
-    return evidencePassesGate(value, question.evidenceGate);
+    return true;
   }
 
   // Opcional no-evidencia (p. ej. A11B): vacío no bloquea el avance
@@ -658,13 +631,7 @@ export function isQuestionAnswered(
     ) {
       return false;
     }
-    // A05: URL de publicación inválida / imagen / marketplace o país incorrecto
-    if (
-      question.validate === 'listingUrl' &&
-      validateListingUrlField(value, answers).level === 'error'
-    ) {
-      return false;
-    }
+    // A05 (listingUrl): ya no bloquea el avance; la validación es solo informativa.
     // A06: punto / basura / demasiado corto
     if (
       question.validate === 'purchaseCode' &&

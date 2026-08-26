@@ -114,11 +114,6 @@ export interface Question {
    * y en exports de cliente.
    */
   internalOnly?: boolean;
-  /**
-   * Candado de evidencia: si la IA marca invalid (y no hay ok),
-   * la pregunta no cuenta como respondida y el shopper no avanza.
-   */
-  evidenceGate?: 'block-invalid';
 }
 
 /** Módulo visual dentro de una parte (fluye uno tras otro) */
