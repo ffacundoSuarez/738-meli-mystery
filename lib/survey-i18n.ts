@@ -113,6 +113,10 @@ const UI: Record<string, Record<Lang, string>> = {
     es: 'La URL no parece una ficha de producto. Abrí el detalle del producto y copiá ese enlace.',
     pt: 'A URL não parece uma ficha de produto. Abra o detalhe do produto e copie esse link.',
   },
+  listingUrlNeedsResolve: {
+    es: 'Link corto o de compartir: se resolverá al guardar. Si podés, pegá el enlace completo de la ficha.',
+    pt: 'Link curto ou de compartilhar: será resolvido ao salvar. Se puder, cole o link completo da ficha.',
+  },
   listingUrlMarketplaceMismatch: {
     es: 'El link es de otro marketplace. Debe coincidir con el marketplace de esta encuesta.',
     pt: 'O link é de outro marketplace. Deve coincidir com o marketplace desta pesquisa.',

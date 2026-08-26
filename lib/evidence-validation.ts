@@ -5,7 +5,8 @@ import {
   surveySections,
 } from '@/lib/survey-config';
 import { COMPETIDOR_QUESTION_ID, interpolate } from '@/lib/format';
-import { AnswerValue, EvidenceFile, EvidenceValidation, Question } from '@/lib/types';
+import { getListingFactsFromAnswers } from '@/lib/survey-config/listing-url';
+import { AnswerValue, EvidenceFile, EvidenceValidation, ProductListingFacts, Question } from '@/lib/types';
 
 const MARKETPLACE_SET = new Set<string>(COMPETIDOR_SLUGS);
 const COUNTRY_SET = new Set(['1', '2']);
@@ -22,6 +23,11 @@ export interface EvidenceVisionContext {
   selectedShippingMethod?: string;
   /** Label legible de A19 */
   selectedShippingLabel?: string;
+  /** A04 título publicación (contexto extracción A17) */
+  listingTitle?: string;
+  listingSlug?: string;
+  expectedPrice?: number;
+  expectedCurrency?: string;
 }
 
 /** Slug de A07 si es Amazon / Falabella / Temu. */
@@ -67,6 +73,20 @@ export function buildEvidenceVisionContext(
   const methodRaw = answers['q18c-metodo-entrega'];
   const selectedShippingMethod =
     typeof methodRaw === 'string' && methodRaw ? methodRaw : undefined;
+  const listing = getListingFactsFromAnswers(answers);
+  const listingTitle =
+    typeof answers['q04-titulo-publicacion'] === 'string'
+      ? answers['q04-titulo-publicacion']
+      : undefined;
+  const moneda = answers['q12-1-moneda'];
+  const priceRaw =
+    moneda === '3' ? answers['q12b-precio-a11b'] : answers['q12-precio'];
+  const expectedPrice =
+    typeof priceRaw === 'number'
+      ? priceRaw
+      : typeof priceRaw === 'string'
+        ? Number(priceRaw)
+        : undefined;
 
   return {
     marketplace: normalizeMarketplace(answers[COMPETIDOR_QUESTION_ID]),
@@ -79,6 +99,11 @@ export function buildEvidenceVisionContext(
     selectedShippingLabel: selectedShippingMethod
       ? SHIPPING_METHOD_LABELS[selectedShippingMethod]
       : undefined,
+    listingTitle,
+    listingSlug: listing?.slug,
+    expectedPrice: Number.isFinite(expectedPrice) ? expectedPrice : undefined,
+    expectedCurrency:
+      moneda === '1' ? 'CLP' : moneda === '2' ? 'COP' : moneda === '3' ? 'USD' : undefined,
   };
 }
 
@@ -103,6 +128,10 @@ export async function validateEvidenceFile(
         studyStage: context?.studyStage,
         selectedShippingMethod: context?.selectedShippingMethod,
         selectedShippingLabel: context?.selectedShippingLabel,
+        listingTitle: context?.listingTitle,
+        listingSlug: context?.listingSlug,
+        expectedPrice: context?.expectedPrice,
+        expectedCurrency: context?.expectedCurrency,
       }),
     });
     if (!res.ok) {
@@ -113,6 +142,7 @@ export async function validateEvidenceFile(
       };
     }
     const data = await res.json();
+    const facts = parseProductListingFacts(data.facts);
     return {
       status:
         data.status === 'ok' ||
@@ -127,6 +157,7 @@ export async function validateEvidenceFile(
           : 'validation_unavailable',
       detectedLabel:
         typeof data.detectedLabel === 'string' ? data.detectedLabel : undefined,
+      facts,
     };
   } catch {
     return {
@@ -135,4 +166,23 @@ export async function validateEvidenceFile(
       reason: 'validation_unavailable',
     };
   }
+}
+
+function parseProductListingFacts(raw: unknown): ProductListingFacts | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const o = raw as Record<string, unknown>;
+  const facts: ProductListingFacts = {};
+  if (typeof o.title === 'string' && o.title.trim()) facts.title = o.title.trim();
+  if (typeof o.price === 'number' && Number.isFinite(o.price)) facts.price = o.price;
+  if (typeof o.currency === 'string' && o.currency.trim()) {
+    facts.currency = o.currency.trim();
+  }
+  if (typeof o.soldBy === 'string' && o.soldBy.trim()) facts.soldBy = o.soldBy.trim();
+  if (typeof o.shippedBy === 'string' && o.shippedBy.trim()) {
+    facts.shippedBy = o.shippedBy.trim();
+  }
+  if (typeof o.marketplaceVisible === 'string' && o.marketplaceVisible.trim()) {
+    facts.marketplaceVisible = o.marketplaceVisible.trim();
+  }
+  return Object.keys(facts).length > 0 ? facts : undefined;
 }

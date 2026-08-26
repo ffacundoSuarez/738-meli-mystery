@@ -172,7 +172,32 @@ export interface EvidenceValidation {
   confidence: number;
   reason: string;
   detectedLabel?: string;
+  /** Hechos estructurados extraídos por Vision (A17, etc.) */
+  facts?: ProductListingFacts;
 }
+
+/** Variables extraídas de captura de publicación (A17). */
+export interface ProductListingFacts {
+  title?: string;
+  price?: number;
+  currency?: string;
+  soldBy?: string;
+  shippedBy?: string;
+  marketplaceVisible?: string;
+}
+
+export type CrossCheckStatus = 'match' | 'mismatch' | 'doubt' | 'skip';
+
+export interface CrossCheckResult {
+  status: CrossCheckStatus;
+  label: string;
+  detail?: string;
+}
+
+export type CrossChecksMap = Record<string, CrossCheckResult>;
+
+/** Clave interna en answers para cruces automáticos. */
+export const CROSS_CHECKS_KEY = '_crossChecks';
 
 export interface EvidenceFile {
   url: string;
@@ -182,10 +207,42 @@ export interface EvidenceFile {
   validation?: EvidenceValidation;
 }
 
+/** Marketplace reconocido en URL de publicación (A05). */
+export type ListingMarketplace = 'falabella' | 'amazon' | 'temu';
+
+/** Clave interna en answers para hechos persistidos de A05. */
+export const LISTING_FACTS_KEY = '_listingFacts';
+
+/** Hechos extraídos de la URL (local o tras resolver redirect). */
+export interface ListingFacts {
+  source: 'url' | 'url-resolved';
+  inputUrl: string;
+  canonicalUrl?: string;
+  marketplace?: ListingMarketplace;
+  countryCode?: '1' | '2';
+  /** ID canónico para cruce A06 (-g- o sku_id / ASIN / ID Falabella). */
+  productId?: string;
+  /** Temu goods_id u otro ID secundario (no cruza A06 por defecto). */
+  goodsId?: string;
+  /** Falabella: SKU final en el path si difiere del ID catálogo. */
+  alternateProductId?: string;
+  slug?: string;
+  host?: string;
+  parseOk: boolean;
+  parseCode?: string;
+  extractedAt: string;
+}
+
 /** Respuesta de matriz: filaId -> valor de columna */
 export type MatrixAnswer = Record<string, string>;
 
-export type AnswerValue = string | string[] | EvidenceFile[] | MatrixAnswer;
+export type AnswerValue =
+  | string
+  | string[]
+  | EvidenceFile[]
+  | MatrixAnswer
+  | ListingFacts
+  | CrossChecksMap;
 
 export interface SurveyResponse {
   id: string;

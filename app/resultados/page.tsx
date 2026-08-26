@@ -19,13 +19,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ResponseDetails } from '@/components/dashboard/ResponseDetails';
+import { ClientDownloadDialog } from '@/components/dashboard/ClientDownloadDialog';
 import { getPublicResults } from '@/lib/data';
-import {
-  exportResponsesToCsv,
-  exportResponsesToExcel,
-  exportResponsesToPdf,
-} from '@/lib/export';
 import { getSectionTitle } from '@/lib/survey-config';
+import { CIUDADES } from '@/lib/survey-config/constants';
+import { evaluateCondition } from '@/lib/survey-logic';
 import { getScreeningSnapshot } from '@/lib/survey-snapshot';
 import { PublicResult, SurveyResponse } from '@/lib/types';
 import {
@@ -63,9 +61,10 @@ export default function ResultadosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('all');
   const [filterPais, setFilterPais] = useState('all');
+  const [filterCiudad, setFilterCiudad] = useState('all');
   const [selected, setSelected] = useState<PublicResult | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [exporting, setExporting] = useState<string | null>(null);
+  const [downloadOpen, setDownloadOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -79,7 +78,7 @@ export default function ResultadosPage() {
     })();
   }, []);
 
-  // Empresa = marca que el encuestado respondió; País = del screening
+  // Empresa = marca; País = screening; Ciudad = A09
   const empresas = useMemo(
     () =>
       [
@@ -99,6 +98,39 @@ export default function ResultadosPage() {
     [results]
   );
 
+  /** Código de país del filtro (label → code) para filtrar ciudades. */
+  const filterPaisCode = useMemo(() => {
+    if (filterPais === 'all') return 'all';
+    const found = results
+      .map((r) => getScreeningSnapshot(r.answers))
+      .find((s) => s.pais === filterPais);
+    return found?.paisCode || 'all';
+  }, [filterPais, results]);
+
+  const ciudadOptions = useMemo(() => {
+    if (filterPaisCode === 'all') {
+      // Solo ciudades presentes en los datos
+      const present = new Set(
+        results
+          .map((r) => r.answers?.['q10-ciudad'] as string | undefined)
+          .filter(Boolean) as string[]
+      );
+      return CIUDADES.filter((c) => present.has(c.value));
+    }
+    return CIUDADES.filter((c) =>
+      evaluateCondition(c.showIf, { 'f1-pais': filterPaisCode })
+    );
+  }, [filterPaisCode, results]);
+
+  useEffect(() => {
+    if (
+      filterCiudad !== 'all' &&
+      !ciudadOptions.some((c) => c.value === filterCiudad)
+    ) {
+      setFilterCiudad('all');
+    }
+  }, [filterCiudad, ciudadOptions]);
+
   const filtered = results.filter((s) => {
     const snapshot = getScreeningSnapshot(s.answers);
     const term = searchTerm.toLowerCase();
@@ -112,26 +144,15 @@ export default function ResultadosPage() {
     const matchesEmpresa =
       filterEmpresa === 'all' || snapshot.marca === filterEmpresa;
     const matchesPais = filterPais === 'all' || snapshot.pais === filterPais;
-    return matchesSearch && matchesEmpresa && matchesPais;
+    const cityCode = s.answers?.['q10-ciudad'] as string | undefined;
+    const matchesCiudad =
+      filterCiudad === 'all' || cityCode === filterCiudad;
+    return matchesSearch && matchesEmpresa && matchesPais && matchesCiudad;
   });
 
   const selectedSnapshot = selected
     ? getScreeningSnapshot(selected.answers)
     : null;
-
-  const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
-    if (filtered.length === 0) return;
-    setExporting(format);
-    try {
-      if (format === 'csv') exportResponsesToCsv(filtered);
-      else if (format === 'excel') await exportResponsesToExcel(filtered);
-      else await exportResponsesToPdf(filtered);
-    } catch {
-      toast.error('Error al exportar');
-    } finally {
-      setExporting(null);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -143,7 +164,7 @@ export default function ResultadosPage() {
             </div>
             <div>
               <h1 className="font-semibold text-lg">Mystery Shopper ML</h1>
-              <p className="text-xs text-muted-foreground">Resultados del proceso</p>
+              <p className="text-xs text-muted-foreground">Resultados del estudio</p>
             </div>
           </div>
         </div>
@@ -159,41 +180,21 @@ export default function ResultadosPage() {
                 : `${filtered.length} de ${results.length} postulante${results.length !== 1 ? 's' : ''} con etapas aprobadas`}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport('csv')}
-              disabled={filtered.length === 0 || exporting !== null}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport('excel')}
-              disabled={filtered.length === 0 || exporting !== null}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Excel
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport('pdf')}
-              disabled={filtered.length === 0 || exporting !== null}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              PDF
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDownloadOpen(true)}
+            disabled={loading || results.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Descargar
+          </Button>
         </div>
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+              <div className="relative flex-1 min-w-[180px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por nombre o ID..."
@@ -226,6 +227,20 @@ export default function ResultadosPage() {
                   {paises.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterCiudad} onValueChange={setFilterCiudad}>
+                <SelectTrigger className="w-full sm:w-44">
+                  <MapPin className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Ciudad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las ciudades</SelectItem>
+                  {ciudadOptions.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -280,9 +295,9 @@ export default function ResultadosPage() {
                               <MapPin className="w-3.5 h-3.5 mt-0.5 text-muted-foreground" />
                               <span className="inline-flex flex-col">
                                 <span>{snapshot.pais}</span>
-                                {snapshot.region && (
+                                {snapshot.ciudad && (
                                   <span className="text-xs text-muted-foreground">
-                                    {snapshot.region}
+                                    {snapshot.ciudad}
                                   </span>
                                 )}
                               </span>
@@ -320,6 +335,15 @@ export default function ResultadosPage() {
         </Card>
       </main>
 
+      <ClientDownloadDialog
+        open={downloadOpen}
+        onOpenChange={setDownloadOpen}
+        results={results}
+        initialPais={filterPais}
+        initialCiudad={filterCiudad}
+        initialEmpresa={filterEmpresa}
+      />
+
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-6xl w-[96vw] sm:max-w-6xl max-h-[92vh] overflow-y-auto p-6 sm:p-8">
           <DialogHeader className="pb-2">
@@ -328,7 +352,7 @@ export default function ResultadosPage() {
               {selected?.code ? `ID: ${selected.code}` : `ID: ${selected?.id}`}
               {selectedSnapshot?.marca ? ` · ${selectedSnapshot.marca}` : ''}
               {selectedSnapshot?.pais ? ` · ${selectedSnapshot.pais}` : ''}
-              {selectedSnapshot?.region ? ` (${selectedSnapshot.region})` : ''}
+              {selectedSnapshot?.ciudad ? ` (${selectedSnapshot.ciudad})` : ''}
             </DialogDescription>
           </DialogHeader>
           {selected && (

@@ -6,6 +6,7 @@ import {
   SI_NO_NA,
   eq,
   evidenciasModule,
+  neq,
 } from './constants';
 import { usdFrom, totalsMatchLabel } from './computed';
 
@@ -170,6 +171,13 @@ export const parte3: SurveySection = {
           text: 'F09.2. ¿Con qué transportadora internacional se envió el paquete?',
           type: 'text',
           required: true,
+          // Falabella: envíos siempre locales (Maia). También oculto si A15 = No.
+          showIf: {
+            all: [
+              neq('q8-competidor', 'falabella'),
+              eq('q15a-logistica-internacional', '1'),
+            ],
+          },
           hint: 'La indicación de la transportadora suele ser indicada en el paquete o recibo. Si el paquete/recibo no indica, indique "No se especifica".',
         },
         {
