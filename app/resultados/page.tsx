@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,8 @@ import {
 } from '@/components/ui/dialog';
 import { ResponseDetails } from '@/components/dashboard/ResponseDetails';
 import { ClientDownloadDialog } from '@/components/dashboard/ClientDownloadDialog';
-import { getPublicResults } from '@/lib/data';
+import { getResultados, ResultadosAuthError } from '@/lib/data';
+import { clearResultadosCredentials } from '@/lib/resultados-auth';
 import { getSectionTitle } from '@/lib/survey-config';
 import { CIUDADES } from '@/lib/survey-config/constants';
 import { evaluateCondition } from '@/lib/survey-logic';
@@ -35,6 +37,8 @@ import {
   Download,
   Loader2,
   BarChart3,
+  LogOut,
+  LayoutDashboard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -56,8 +60,11 @@ function toSurveyResponse(r: PublicResult): SurveyResponse {
 }
 
 export default function ResultadosPage() {
+  const router = useRouter();
   const [results, setResults] = useState<PublicResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [isOpsViewer, setIsOpsViewer] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('all');
   const [filterPais, setFilterPais] = useState('all');
@@ -69,14 +76,37 @@ export default function ResultadosPage() {
   useEffect(() => {
     (async () => {
       try {
-        setResults(await getPublicResults());
-      } catch {
+        const { results: data, isOpsViewer: opsViewer } = await getResultados();
+        setResults(data);
+        setIsOpsViewer(opsViewer);
+      } catch (err) {
+        if (err instanceof ResultadosAuthError) {
+          if (err.code === 'passcode_invalid') {
+            router.replace('/acceso?redirect=/resultados');
+            return;
+          }
+          router.replace('/resultados/acceso?redirect=/resultados');
+          return;
+        }
         toast.error('Error al cargar resultados');
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [router]);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      clearResultadosCredentials();
+      await fetch('/api/resultados/acceso', { method: 'DELETE' });
+      router.push('/resultados/acceso');
+    } catch {
+      toast.error('Error al cerrar sesión');
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   // Empresa = marca; País = screening; Ciudad = A09
   const empresas = useMemo(
@@ -167,6 +197,26 @@ export default function ResultadosPage() {
               <p className="text-xs text-muted-foreground">Resultados del estudio</p>
             </div>
           </div>
+          {isOpsViewer ? (
+            <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Volver al panel
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              disabled={loggingOut}
+            >
+              {loggingOut ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4 mr-2" />
+              )}
+              Cerrar sesión
+            </Button>
+          )}
         </div>
       </header>
 

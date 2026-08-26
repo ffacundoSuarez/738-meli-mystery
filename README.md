@@ -13,7 +13,7 @@ npm run dev
 
 ## Base de datos
 
-Corré `supabase/migrations/0001_meli_schema.sql` completo en el SQL Editor de Supabase.
+Corré las migraciones en orden en el SQL Editor de Supabase (`0001` … `0005`).
 
 > **Importante:** este proyecto comparte la base Supabase con `mystery-shopper-prosegur`.
 > Todos los objetos llevan prefijo `meli_` para no colisionar. El script es puramente
@@ -33,11 +33,32 @@ el hash (el insert es `on conflict do nothing`). Cambialo desde el SQL Editor co
 select public.meli_admin_update_passcode('CAMBIAR_ESTE_PASSCODE', 'tu-passcode-real');
 ```
 
+### Usuarios cliente (`/resultados`)
+
+La vista de resultados requiere login con email + contraseña (hasta 3 cuentas).
+Las credenciales se guardan hasheadas en `app_config.meli_resultados_clients`
+(mismo patrón bcrypt que Ops). **No van en variables de entorno.**
+
+1. Corré `supabase/migrations/0005_meli_resultados_auth.sql`.
+2. Cargá los usuarios desde el SQL Editor (requiere passcode Ops válido):
+
+```sql
+select public.meli_admin_upsert_resultados_client('tu-passcode-ops', 'email@mercadolibre.com', 'password-seguro');
+```
+
+Plantilla sin passwords reales: [`supabase/scripts/seed-resultados-clients.example.sql`](supabase/scripts/seed-resultados-clients.example.sql).
+
+Para rotar una contraseña, volvé a llamar `meli_admin_upsert_resultados_client` con el mismo email.
+
 ## Arquitectura
 
-- **Sin auth de usuarios.** El shopper accede por un `access_token` UUID en la URL
-  (`/encuesta/<token>`). El panel Ops usa un passcode compartido, hasheado con bcrypt
-  en `app_config.meli_passcode_hash` y validado dentro de Postgres.
+- **Shopper:** accede por `access_token` UUID en la URL (`/encuesta/<token>`).
+- **Panel Ops:** passcode compartido, hasheado en `app_config.meli_passcode_hash`.
+- **Clientes (`/resultados`):** email + contraseña, hashes en `app_config.meli_resultados_clients`.
+  Cookie `meli_resultados_auth` + credenciales en `sessionStorage` (como Ops).
+  Datos vía RPC `meli_get_public_results_client` con anon key.
+  **Ops** con sesión activa (`meli_auth` + passcode en `sessionStorage`) también puede
+  entrar a `/resultados` sin cuenta cliente (`meli_get_public_results_ops`).
 - **Todo el acceso a datos pasa por RPCs `security definer`** con prefijo `meli_`.
   La tabla `meli_responses` tiene RLS habilitado sin policies: no se puede consultar
   directo con la anon key.
@@ -51,6 +72,9 @@ El BFF `POST /api/evidencia/validar` llama al Express en Lightsail
 
 | Variable | Descripción |
 |---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (shopper, Ops y clientes `/resultados`) |
+| `INTERNAL_PASSCODE` | Passcode Ops para `/api/acceso` |
 | `LIGHTSAIL_EVIDENCE_URL` | Base URL del servicio (ej. `http://x.x.x.x:3000`) |
 | `MELI_SERVICE_KEY` | Secret compartido (mismo valor en Lightsail) |
 
@@ -66,7 +90,8 @@ Si faltan las variables, el upload sigue funcionando (fail-soft → `doubt`).
 | `app/encuesta/[id]` | Cuestionario del shopper (entrada por token) |
 | `app/acceso` | Login del panel Ops |
 | `app/dashboard` | Panel interno: métricas, postulantes, revisión, estadísticas |
-| `app/resultados` | Vista pública de resultados aprobados (sin login) |
+| `app/resultados/acceso` | Login clientes Mercado Libre |
+| `app/resultados` | Resultados aprobados (requiere sesión cliente) |
 | `lib/survey-config/` | Definición del cuestionario (secciones, módulos, preguntas) |
 | `lib/survey-logic.ts` | Motor de visibilidad condicional, descalificación y progreso |
 | `lib/data.ts` | Capa de acceso a datos (wrappers de los RPCs) |
