@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
       studyStage,
       selectedShippingMethod,
       selectedShippingLabel,
+      listingTitle,
+      listingSlug,
+      expectedPrice,
+      expectedCurrency,
     } = body || {};
 
     if (
@@ -83,6 +87,22 @@ export async function POST(request: NextRequest) {
           selectedShippingLabel.trim()
             ? selectedShippingLabel.trim()
             : undefined,
+        listingTitle:
+          typeof listingTitle === 'string' && listingTitle.trim()
+            ? listingTitle.trim()
+            : undefined,
+        listingSlug:
+          typeof listingSlug === 'string' && listingSlug.trim()
+            ? listingSlug.trim()
+            : undefined,
+        expectedPrice:
+          typeof expectedPrice === 'number' && Number.isFinite(expectedPrice)
+            ? expectedPrice
+            : undefined,
+        expectedCurrency:
+          typeof expectedCurrency === 'string' && expectedCurrency.trim()
+            ? expectedCurrency.trim()
+            : undefined,
       }),
       // Vision puede tardar
       signal: AbortSignal.timeout(60000),
@@ -116,6 +136,10 @@ export async function POST(request: NextRequest) {
       detectedLabel:
         typeof result.detectedLabel === 'string'
           ? result.detectedLabel
+          : undefined,
+      facts:
+        result.facts && typeof result.facts === 'object'
+          ? result.facts
           : undefined,
     });
   } catch (err) {

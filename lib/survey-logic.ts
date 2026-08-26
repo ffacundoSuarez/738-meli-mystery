@@ -2,19 +2,39 @@ import {
   AnswerValue,
   Condition,
   ConditionClause,
+  CrossChecksMap,
+  CROSS_CHECKS_KEY,
   MatrixRow,
   Question,
   QuestionOption,
   SurveyModule,
   SurveySection,
 } from './types';
+import { computeCrossChecks } from './cross-checks';
 import { lockedValueFromAssignment } from './survey-config/assignment-title';
 import {
   parseListingUrl,
   validatePurchaseCode,
+  buildListingFacts,
+  parseListingUrlWithMeta,
+  LISTING_FACTS_KEY,
   type ListingUrlMessageKey,
   type PurchaseCodeMessageKey,
 } from './survey-config/listing-url';
+
+/** ¿El valor es un mapa de cruces automáticos (_crossChecks)? */
+function isCrossChecksMap(value: unknown): value is CrossChecksMap {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (entries.length === 0) return false;
+  return entries.every(
+    ([, v]) =>
+      v !== null &&
+      typeof v === 'object' &&
+      'status' in (v as object) &&
+      'label' in (v as object)
+  );
+}
 
 /** ¿El valor es una respuesta de matriz? */
 export function isMatrixAnswer(value: AnswerValue): value is Record<string, string> {
@@ -22,7 +42,9 @@ export function isMatrixAnswer(value: AnswerValue): value is Record<string, stri
     typeof value === 'object' &&
     value !== null &&
     !Array.isArray(value) &&
-    !('url' in value)
+    !('url' in value) &&
+    !('parseOk' in value && 'inputUrl' in value) &&
+    !isCrossChecksMap(value)
   );
 }
 
@@ -137,7 +159,70 @@ export function applyComputedAnswers(
       next[q.id] = locked;
     }
   }
-  return next;
+  return applyCrossChecks(applyListingFacts(next));
+}
+
+/**
+ * Recalcula _crossChecks desde URL + Vision + respuestas relacionadas.
+ */
+export function applyCrossChecks(
+  answers: Record<string, AnswerValue>
+): Record<string, AnswerValue> {
+  const checks = computeCrossChecks(answers);
+  if (Object.keys(checks).length === 0) {
+    if (answers[CROSS_CHECKS_KEY] !== undefined) {
+      const next = { ...answers };
+      delete next[CROSS_CHECKS_KEY];
+      return next;
+    }
+    return answers;
+  }
+  return { ...answers, [CROSS_CHECKS_KEY]: checks };
+}
+
+/**
+ * Deriva _listingFacts desde A05 (parse local). No sobrescribe facts ya resueltos
+ * por /api/listing/normalize si la URL no cambió.
+ */
+export function applyListingFacts(
+  answers: Record<string, AnswerValue>
+): Record<string, AnswerValue> {
+  const url = answers['q05-link-publicacion'];
+  if (typeof url !== 'string' || !url.trim()) {
+    if (answers[LISTING_FACTS_KEY] !== undefined) {
+      const next = { ...answers };
+      delete next[LISTING_FACTS_KEY];
+      return next;
+    }
+    return answers;
+  }
+
+  const trimmed = url.trim();
+  const existing = answers[LISTING_FACTS_KEY];
+  if (
+    existing &&
+    typeof existing === 'object' &&
+    !Array.isArray(existing) &&
+    'inputUrl' in existing &&
+    existing.inputUrl === trimmed &&
+    existing.source === 'url-resolved'
+  ) {
+    return answers;
+  }
+
+  const { parse, meta } = parseListingUrlWithMeta(trimmed, {
+    expectedMarketplace:
+      typeof answers['q8-competidor'] === 'string'
+        ? answers['q8-competidor']
+        : undefined,
+    expectedCountry:
+      typeof answers['f1-pais'] === 'string' ? answers['f1-pais'] : undefined,
+  });
+
+  return {
+    ...answers,
+    [LISTING_FACTS_KEY]: buildListingFacts(trimmed, parse, { meta }),
+  };
 }
 
 /**

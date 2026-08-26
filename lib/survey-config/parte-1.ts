@@ -228,6 +228,9 @@ export const parte1: SurveySection = {
           options: LOGISTICA,
           required: true,
           defaultValue: '1',
+          // Siempre Player: el marketplace es quien hace el envío (Maia)
+          lockedIf: { questionId: 'f1-pais', values: ['1', '2'] },
+          lockedValue: '1',
           hint: 'Player: producto enviado por Marketplace\nSeller: producto enviado por Seller\n* Seleccionar esta opción. El tipo de logística siempre es “Player”. (Siempre el Marketplace es quien hace el Envío).',
         },
         {

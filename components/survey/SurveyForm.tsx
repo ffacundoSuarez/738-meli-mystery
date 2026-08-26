@@ -25,7 +25,8 @@ import {
 } from '@/lib/survey-logic';
 import { formatQuestionText, interpolate, pick } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
-import { AnswerValue, EvidenceFile, Lang, Question, ReviewFlagsMap, StageStatus, StagesMap, SurveyModule } from '@/lib/types';
+import { AnswerValue, EvidenceFile, Lang, ListingFacts, Question, ReviewFlagsMap, StageStatus, StagesMap, SurveyModule } from '@/lib/types';
+import { LISTING_FACTS_KEY } from '@/lib/survey-config/listing-url';
 import { getResponseByToken, saveStageByToken, uploadEvidence } from '@/lib/data';
 import { buildEvidenceVisionContext, validateEvidenceFile } from '@/lib/evidence-validation';
 import { Button } from '@/components/ui/button';
@@ -272,6 +273,13 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     });
   };
 
+  const handleListingFacts = useCallback((facts: ListingFacts) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [LISTING_FACTS_KEY]: facts,
+    }));
+  }, []);
+
   const handleEvidenceUpload = async (questionId: string, files: FileList | null) => {
     if (isFinalized || surveyThankYou) return;
     if (!files || files.length === 0) return;
@@ -303,20 +311,6 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
             buildEvidenceVisionContext(question, answers)
           );
           uploadedFile.validation = validation;
-          // Feedback informativo: no bloquea el avance.
-          if (validation.status === 'invalid') {
-            toast.warning(
-              validation.reason && validation.reason !== 'validation_unavailable'
-                ? validation.reason
-                : t('evidenceInvalid', lang)
-            );
-          } else if (validation.status === 'doubt') {
-            toast.warning(
-              validation.reason && validation.reason !== 'validation_unavailable'
-                ? validation.reason
-                : t('evidenceDoubt', lang)
-            );
-          }
         }
 
         uploaded.push(uploadedFile);
@@ -599,6 +593,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
           uploadProgress={uploadProgress[question.id]}
           onUploadEvidence={handleEvidenceUpload}
           onRemoveEvidence={removeEvidence}
+          onListingFacts={handleListingFacts}
+          showValidationFeedback={false}
+          showEvidenceValidationFeedback={true}
         />
       </div>
     );

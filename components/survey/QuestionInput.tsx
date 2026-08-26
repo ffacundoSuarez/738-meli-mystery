@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,6 +19,7 @@ import {
   AnswerValue,
   EvidenceFile,
   Lang,
+  ListingFacts,
   MatrixAnswer,
   Question,
 } from '@/lib/types';
@@ -38,10 +39,14 @@ export interface QuestionInputProps {
   onUploadEvidence?: (questionId: string, files: FileList | null) => void;
   onRemoveEvidence?: (questionId: string, url: string) => void;
   /**
-   * Mostrar mensajes de validación (IA, URL, etc.).
-   * En encuesta shopper se desactiva para no confundir; en dashboard queda true.
+   * Mostrar mensajes de validación en campos de texto (URL A05, etc.).
+   * En encuesta shopper A05 sigue oculto; revisión/dashboard true.
    */
   showValidationFeedback?: boolean;
+  /** Comentarios IA bajo evidencias (A17, etc.). Encuesta: true; no bloquea avance. */
+  showEvidenceValidationFeedback?: boolean;
+  /** Tras normalizar A05 en servidor (share links). Fail-soft. */
+  onListingFacts?: (facts: ListingFacts) => void;
 }
 
 /** Renderiza el control editable según el tipo de pregunta */
@@ -57,7 +62,11 @@ export function QuestionInput({
   onUploadEvidence,
   onRemoveEvidence,
   showValidationFeedback = true,
+  showEvidenceValidationFeedback,
+  onListingFacts,
 }: QuestionInputProps) {
+  const [listingResolving, setListingResolving] = useState(false);
+  const showEvidenceFeedback = showEvidenceValidationFeedback ?? showValidationFeedback;
   const options = useMemo(
     () => getOrderedOptions(question, answers, optionSeed),
     [question, answers, optionSeed]
@@ -162,6 +171,34 @@ export function QuestionInput({
 
   if (question.type === 'text') {
     const textValue = (value as string) || '';
+
+    const normalizeListingOnBlur = async () => {
+      const trimmed = textValue.trim();
+      if (!trimmed || question.validate !== 'listingUrl' || !onListingFacts) {
+        return;
+      }
+      setListingResolving(true);
+      try {
+        const res = await fetch('/api/listing/normalize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: trimmed,
+            expectedMarketplace: answers['q8-competidor'],
+            expectedCountry: answers['f1-pais'],
+          }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { facts?: ListingFacts };
+          if (data.facts) onListingFacts(data.facts);
+        }
+      } catch {
+        // fail-soft
+      } finally {
+        setListingResolving(false);
+      }
+    };
+
     // listingUrl: solo feedback en dashboard; purchaseCode siempre (sigue bloqueando)
     const fieldCheck =
       textValue.trim() &&
@@ -184,6 +221,9 @@ export function QuestionInput({
           onChange={(e) => {
             if (!isComputed) updateValue(e.target.value);
           }}
+          onBlur={
+            question.validate === 'listingUrl' ? normalizeListingOnBlur : undefined
+          }
           readOnly={isComputed || isLocked}
           placeholder={t('writeAnswer', lang)}
           className={
@@ -192,6 +232,12 @@ export function QuestionInput({
               : undefined
           }
         />
+        {listingResolving && question.validate === 'listingUrl' && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Verificando enlace…
+          </p>
+        )}
         {fieldMsg && (
           <p className="text-sm text-destructive">{fieldMsg}</p>
         )}
@@ -486,20 +532,41 @@ export function QuestionInput({
                 >
                   {file.name}
                 </a>
-                {showValidationFeedback && file.validation?.status === 'invalid' && (
+                {showEvidenceFeedback && file.validation?.status === 'invalid' && (
                   <p className="text-xs text-destructive">
                     {file.validation.reason || t('evidenceInvalid', lang)}
                   </p>
                 )}
-                {showValidationFeedback && file.validation?.status === 'doubt' && (
+                {showEvidenceFeedback && file.validation?.status === 'doubt' && (
                   <p className="text-xs text-amber-600 dark:text-amber-500">
                     {file.validation.reason || t('evidenceDoubt', lang)}
                   </p>
                 )}
-                {showValidationFeedback && file.validation?.status === 'ok' && (
+                {showEvidenceFeedback && file.validation?.status === 'ok' && (
                   <p className="text-xs text-green-700 dark:text-green-500">
-                    Evidencia OK
+                    {file.validation.reason &&
+                    file.validation.reason !== 'validation_unavailable'
+                      ? file.validation.reason
+                      : 'Evidencia OK'}
                   </p>
+                )}
+                {showEvidenceFeedback && file.validation?.facts && (
+                  <div className="text-xs text-muted-foreground space-y-0.5 pt-0.5">
+                    {file.validation.facts.title && (
+                      <p>Título detectado: {file.validation.facts.title}</p>
+                    )}
+                    {file.validation.facts.price !== undefined && (
+                      <p>
+                        Precio detectado: {file.validation.facts.price}
+                        {file.validation.facts.currency
+                          ? ` ${file.validation.facts.currency}`
+                          : ''}
+                      </p>
+                    )}
+                    {file.validation.facts.soldBy && (
+                      <p>Vendido por: {file.validation.facts.soldBy}</p>
+                    )}
+                  </div>
                 )}
               </div>
               {onRemoveEvidence && (

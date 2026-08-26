@@ -47,6 +47,7 @@ import {
 import { uploadEvidence } from '@/lib/data';
 import { buildEvidenceVisionContext, validateEvidenceFile } from '@/lib/evidence-validation';
 import {
+  CROSS_CHECKS_KEY,
   AnswerValue,
   EvidenceFile,
   Lang,
@@ -82,11 +83,15 @@ import {
   type AssignmentCheckStatus,
 } from '@/lib/survey-config/assignment-title';
 import {
-  crossCheckPurchaseCodeWithUrl,
-  parseListingUrl,
-  slugLooksLikeTitle,
-  type PurchaseCodeUrlCrossStatus,
+  getEffectiveListingParse,
+  getListingFactsFromAnswers,
 } from '@/lib/survey-config/listing-url';
+import {
+  computeCrossChecks,
+  crossChecksForQuestion,
+  CROSS_CHECK_BADGE_COLORS,
+} from '@/lib/cross-checks';
+import { LISTING_FACTS_KEY } from '@/lib/survey-config/listing-url';
 
 export type ResponseDetailsMode = 'revision' | 'results';
 
@@ -128,8 +133,10 @@ interface ResponseDetailsProps {
 function renderAnswerCell(
   question: Question,
   answer: AnswerValue | undefined,
-  answers: Record<string, AnswerValue>
+  answers: Record<string, AnswerValue>,
+  options?: { showAiFeedback?: boolean }
 ) {
+  const showAi = options?.showAiFeedback !== false;
   if (question.type === 'evidence') {
     if (!answer || !isEvidence(answer)) {
       return (
@@ -149,7 +156,7 @@ function renderAnswerCell(
               <FileText className="w-4 h-4 shrink-0" />
               <span className="truncate font-bold">{file.name}</span>
             </a>
-            {file.validation?.status === 'ok' && (
+            {showAi && file.validation?.status === 'ok' && (
               <Badge
                 variant="outline"
                 className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
@@ -157,7 +164,7 @@ function renderAnswerCell(
                 IA: OK
               </Badge>
             )}
-            {file.validation?.status === 'doubt' && (
+            {showAi && file.validation?.status === 'doubt' && (
               <Badge
                 variant="outline"
                 className="text-[10px] py-0 h-5 bg-amber-50 text-amber-800 border-amber-200"
@@ -166,7 +173,7 @@ function renderAnswerCell(
                 IA: Dudosa
               </Badge>
             )}
-            {file.validation?.status === 'invalid' && (
+            {showAi && file.validation?.status === 'invalid' && (
               <Badge
                 variant="outline"
                 className="text-[10px] py-0 h-5 bg-red-50 text-red-800 border-red-200"
@@ -175,13 +182,32 @@ function renderAnswerCell(
                 IA: Inválida
               </Badge>
             )}
-            {(file.validation?.status === 'doubt' ||
-              file.validation?.status === 'invalid') &&
+            {showAi &&
+              (file.validation?.status === 'doubt' ||
+                file.validation?.status === 'invalid') &&
               file.validation.reason && (
                 <p className="text-xs text-muted-foreground">
                   {file.validation.reason}
                 </p>
               )}
+            {showAi && file.validation?.facts && (
+              <div className="text-xs text-muted-foreground space-y-0.5 pl-1 border-l-2 border-muted">
+                {file.validation.facts.title && (
+                  <p>Título IA: {file.validation.facts.title}</p>
+                )}
+                {file.validation.facts.price !== undefined && (
+                  <p>
+                    Precio IA: {file.validation.facts.price}
+                    {file.validation.facts.currency
+                      ? ` ${file.validation.facts.currency}`
+                      : ''}
+                  </p>
+                )}
+                {file.validation.facts.soldBy && (
+                  <p>Vendido por IA: {file.validation.facts.soldBy}</p>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -268,13 +294,6 @@ const ASSIGNMENT_BADGE_COLORS: Record<AssignmentCheckStatus, string> = {
   unparseable: 'bg-slate-50 text-slate-600 border-slate-200',
 };
 
-const URL_CROSS_BADGE_COLORS: Record<PurchaseCodeUrlCrossStatus, string> = {
-  match: 'bg-green-50 text-green-800 border-green-200',
-  no_id_in_url: 'bg-amber-50 text-amber-800 border-amber-200',
-  mismatch: 'bg-amber-50 text-amber-800 border-amber-200',
-  skip: '',
-};
-
 /** ¿La respuesta de texto parece una URL clickeable? */
 function asHttpUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -291,19 +310,36 @@ function asHttpUrl(raw: string): string | null {
   }
 }
 
+/** Claves derivadas al abrir (no son ediciones del revisor). */
+const DIFF_SKIP_KEYS = new Set<string>([LISTING_FACTS_KEY, CROSS_CHECKS_KEY]);
+
 /** Calcula el diff entre respuestas editadas y las guardadas */
 function getAnswersDiff(
   original: Record<string, AnswerValue>,
-  edited: Record<string, AnswerValue>
+  edited: Record<string, AnswerValue>,
+  skipKeys: Set<string> = DIFF_SKIP_KEYS
 ): Record<string, AnswerValue> {
   const diff: Record<string, AnswerValue> = {};
   const keys = new Set([...Object.keys(original), ...Object.keys(edited)]);
   for (const key of keys) {
+    if (skipKeys.has(key)) continue;
     if (!answersEqual(original[key], edited[key])) {
       diff[key] = edited[key];
     }
   }
   return diff;
+}
+
+/** Misma normalización que al cargar el modal (locks, computed, facts). */
+function normalizeAnswersForCompare(
+  raw: Record<string, AnswerValue>,
+  nombreApellido?: string
+): Record<string, AnswerValue> {
+  const base = { ...raw };
+  if (nombreApellido && !base['nombre-apellido']) {
+    base['nombre-apellido'] = nombreApellido;
+  }
+  return applyComputedAnswers(getAllQuestions(surveySections), base);
 }
 
 /** Abre la menor parte pendiente de revisión, o la primera disponible */
@@ -353,6 +389,19 @@ export function ResponseDetails({
     return parseAssignmentTitle(title);
   }, [activeAnswers, response.nombreApellido]);
 
+  const crossChecks = useMemo(() => {
+    const stored = activeAnswers[CROSS_CHECKS_KEY];
+    if (
+      stored &&
+      typeof stored === 'object' &&
+      !Array.isArray(stored) &&
+      !('url' in stored)
+    ) {
+      return stored as ReturnType<typeof computeCrossChecks>;
+    }
+    return computeCrossChecks(activeAnswers);
+  }, [activeAnswers]);
+
   const reviewableSectionIds =
     mode === 'results'
       ? REVIEWABLE_SECTIONS.filter((id) => {
@@ -400,10 +449,15 @@ export function ResponseDetails({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [response.id]);
 
-  const answersDiff = useMemo(
-    () => getAnswersDiff(response.answers || {}, editedAnswers),
-    [response.answers, editedAnswers]
-  );
+  const answersDiff = useMemo(() => {
+    const title = response.nombreApellido;
+    const originalNorm = normalizeAnswersForCompare(
+      response.answers || {},
+      title
+    );
+    const editedNorm = normalizeAnswersForCompare(editedAnswers, title);
+    return getAnswersDiff(originalNorm, editedNorm);
+  }, [response.answers, response.nombreApellido, editedAnswers]);
 
   const hasUnsavedChanges = Object.keys(answersDiff).length > 0;
   const canDownloadAll = hasAnyEvidences(response);
@@ -630,11 +684,12 @@ export function ResponseDetails({
                   : question.id === 'f1-pais'
                     ? checkAssignmentMatch(activeAnswers, 'country')
                     : null;
+            const listingFacts = getListingFactsFromAnswers(activeAnswers);
             const listingParsed =
               (question.id === 'q05-link-publicacion' ||
                 question.id === 'q04-titulo-publicacion') &&
               typeof activeAnswers['q05-link-publicacion'] === 'string'
-                ? parseListingUrl(activeAnswers['q05-link-publicacion'], {
+                ? getEffectiveListingParse(activeAnswers, {
                     expectedMarketplace:
                       typeof activeAnswers['q8-competidor'] === 'string'
                         ? activeAnswers['q8-competidor']
@@ -645,20 +700,10 @@ export function ResponseDetails({
                         : undefined,
                   })
                 : null;
-            const purchaseCross =
-              question.id === 'q06-codigo-compra'
-                ? crossCheckPurchaseCodeWithUrl(
-                    activeAnswers['q06-codigo-compra'],
-                    activeAnswers['q05-link-publicacion']
-                  )
-                : null;
-            const titleSlugOk =
-              question.id === 'q04-titulo-publicacion' && listingParsed?.ok
-                ? slugLooksLikeTitle(
-                    listingParsed.slug,
-                    activeAnswers['q04-titulo-publicacion']
-                  )
-                : null;
+            const questionCrossChecks =
+              mode === 'revision'
+                ? crossChecksForQuestion(question.id, crossChecks)
+                : [];
 
             const dominantBorder =
               wasCorrected
@@ -757,6 +802,14 @@ export function ResponseDetails({
                       {listingParsed?.ok &&
                         question.id === 'q05-link-publicacion' && (
                         <>
+                          {listingFacts?.source === 'url-resolved' && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] py-0 h-5 bg-blue-50 text-blue-800 border-blue-200"
+                            >
+                              Share resuelto
+                            </Badge>
+                          )}
                           <Badge
                             variant="outline"
                             className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
@@ -776,6 +829,23 @@ export function ResponseDetails({
                               ID: {listingParsed.productId}
                             </Badge>
                           )}
+                          {listingFacts?.goodsId &&
+                            listingFacts.goodsId !== listingParsed.productId && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] py-0 h-5 bg-slate-50 text-slate-500 border-slate-200"
+                            >
+                              goods_id: {listingFacts.goodsId}
+                            </Badge>
+                          )}
+                          {listingFacts?.alternateProductId && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] py-0 h-5 bg-slate-50 text-slate-500 border-slate-200"
+                            >
+                              SKU: {listingFacts.alternateProductId}
+                            </Badge>
+                          )}
                         </>
                       )}
                       {listingParsed &&
@@ -785,38 +855,24 @@ export function ResponseDetails({
                           variant="outline"
                           className="text-[10px] py-0 h-5 max-w-full whitespace-normal text-left bg-red-50 text-red-800 border-red-200"
                         >
-                          URL inválida
+                          {listingFacts?.parseCode === 'needsResolve'
+                            ? 'Share pendiente de resolver'
+                            : 'URL inválida'}
                         </Badge>
                       )}
-                      {purchaseCross &&
-                        purchaseCross.status !== 'skip' &&
-                        purchaseCross.label && (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              'text-[10px] py-0 h-5 max-w-full whitespace-normal text-left',
-                              URL_CROSS_BADGE_COLORS[purchaseCross.status]
-                            )}
-                          >
-                            {purchaseCross.label}
-                          </Badge>
-                        )}
-                      {titleSlugOk === true && (
+                      {questionCrossChecks.map((check) => (
                         <Badge
+                          key={check.label}
                           variant="outline"
-                          className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
+                          className={cn(
+                            'text-[10px] py-0 h-5 max-w-full whitespace-normal text-left',
+                            CROSS_CHECK_BADGE_COLORS[check.status]
+                          )}
+                          title={check.detail}
                         >
-                          Título ≈ slug URL
+                          {check.label}
                         </Badge>
-                      )}
-                      {titleSlugOk === false && (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] py-0 h-5 bg-amber-50 text-amber-800 border-amber-200"
-                        >
-                          Título ≠ slug URL
-                        </Badge>
-                      )}
+                      ))}
                       {questionChanged && (
                         <Badge
                           variant="outline"
@@ -885,7 +941,8 @@ export function ResponseDetails({
                         {renderAnswerCell(
                           question,
                           activeAnswers[question.id],
-                          activeAnswers
+                          activeAnswers,
+                          { showAiFeedback: mode === 'revision' }
                         )}
                       </div>
                     )}
