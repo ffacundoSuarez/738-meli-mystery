@@ -1,6 +1,5 @@
 import { SurveySection } from '../types';
 import {
-  CATEGORIA_OTRO,
   CATEGORIAS,
   CIUDADES,
   COMPETIDORES,
@@ -140,14 +139,6 @@ export const parte1: SurveySection = {
           text: 'A10. ¿A qué categoría pertenece el producto evaluado?',
           type: 'single',
           options: CATEGORIAS,
-          required: true,
-        },
-        {
-          id: 'q11-categoria-otra',
-          codigoOriginal: 'A10-otra',
-          text: 'A10. Especifique la categoría',
-          type: 'text',
-          showIf: eq('q11-categoria', CATEGORIA_OTRO),
           required: true,
         },
         {

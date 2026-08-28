@@ -233,28 +233,27 @@ function extractProductMeta(url: URL, marketplace: ListingMarketplace): ProductM
     return { slug: cleanSlug(slug), productId };
   }
 
-  // Falabella: /falabella-cl/product/{catalogId}/{Title-Slug}/{skuId}
+  // Falabella: /falabella-{cl|co}/product/{catalogId}/{Title-Slug}/{pageSkuId}
   const productIdx = parts.findIndex((p) => p.toLowerCase() === 'product');
   if (productIdx >= 0 && parts.length > productIdx + 1) {
     const catalogId = /^\d{5,}$/.test(parts[productIdx + 1])
       ? parts[productIdx + 1]
       : undefined;
     const titleSeg = parts[productIdx + 2];
-    const trailingId = parts[parts.length - 1];
+    const trailingId =
+      /^\d{5,}$/.test(parts[parts.length - 1]) ? parts[parts.length - 1] : undefined;
     const slug =
       titleSeg && !/^\d+$/.test(titleSeg) && /[a-z]/i.test(titleSeg)
         ? titleSeg.replace(/-/g, ' ')
         : undefined;
-    const alternateProductId =
-      trailingId &&
-      /^\d{5,}$/.test(trailingId) &&
-      trailingId !== catalogId
-        ? trailingId
-        : undefined;
     const querySku = url.searchParams.get('skuId') || url.searchParams.get('sku');
+    const pageSkuId = trailingId || catalogId;
+    const productId = querySku || pageSkuId;
+    const alternateProductId =
+      catalogId && productId && catalogId !== productId ? catalogId : undefined;
     return {
       slug: cleanSlug(slug),
-      productId: querySku || catalogId,
+      productId,
       alternateProductId,
     };
   }

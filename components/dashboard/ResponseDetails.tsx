@@ -843,7 +843,7 @@ export function ResponseDetails({
                               variant="outline"
                               className="text-[10px] py-0 h-5 bg-slate-50 text-slate-500 border-slate-200"
                             >
-                              SKU: {listingFacts.alternateProductId}
+                              Catálogo: {listingFacts.alternateProductId}
                             </Badge>
                           )}
                         </>

@@ -151,7 +151,7 @@ export const VENDIDO_POR: QuestionOption[] = [
 /** Código de VENDIDO_POR que abre el campo de texto libre "¿Cuál?". */
 export const VENDIDO_POR_OTRO = 'otro';
 
-// --- Categorías del producto (A10) — códigos 1–11 + 97 ----------------------
+// --- Categorías del producto (A10) — códigos 1–11 --------------------------------
 
 export const CATEGORIAS: QuestionOption[] = [
   { value: '1', label: 'Accesorios para vehículos' },
@@ -173,11 +173,7 @@ export const CATEGORIAS: QuestionOption[] = [
     label:
       'Artículos Deportivos* (Incluye pelotas de fútbol, tenis, rugby, paletas, raquetas, etc.) ',
   },
-  { value: '97', label: 'Otros (especificar)' },
 ];
-
-/** Código de CATEGORIAS que corresponde a "Otros (especificar)". */
-export const CATEGORIA_OTRO = '97';
 
 // --- Monedas (A11.1 / A20.1 / A21.1 / F13.1) --------------------------------
 /** Labels sin (SOLO CHI/COL/TODOS): el showIf ya filtra por país. */

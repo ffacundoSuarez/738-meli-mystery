@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import {
   surveySections,
   getResumeSectionIndex,
@@ -44,6 +45,7 @@ import {
   AlertCircle,
   Lock,
   CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -766,8 +768,8 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
 
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">
+          <div className="flex items-center justify-between text-sm gap-2">
+            <span className="font-medium min-w-0">
               {code ? `${code} · ` : ''}
               {pick(section.title, section.titlePt, lang)}
               {currentModule && visibleModules.length > 1 && (
@@ -777,7 +779,18 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
                 </span>
               )}
             </span>
-            <span className="text-muted-foreground">{Math.round(moduleProgress)}%</span>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/productosEvaluados"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+              >
+                Productos ya evaluados
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+              <span className="text-muted-foreground">{Math.round(moduleProgress)}%</span>
+            </div>
           </div>
           <Progress value={moduleProgress} className="h-2" />
         </div>
