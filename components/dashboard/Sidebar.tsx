@@ -9,6 +9,7 @@ import {
   UserPlus,
   BarChart3,
   ExternalLink,
+  Package,
 } from 'lucide-react';
 
 const navigation = [
@@ -16,6 +17,7 @@ const navigation = [
   { name: 'Postulantes', href: '/dashboard/postulantes', icon: UserPlus },
   { name: 'Revisión', href: '/dashboard/revision', icon: ClipboardCheck },
   { name: 'Estadísticas', href: '/dashboard/estadisticas', icon: BarChart3 },
+  { name: 'Productos evaluados', href: '/productosEvaluados', icon: Package, external: true },
 ];
 
 export function Sidebar() {
@@ -39,6 +41,8 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              target={'external' in item && item.external ? '_blank' : undefined}
+              rel={'external' in item && item.external ? 'noopener noreferrer' : undefined}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 isActive

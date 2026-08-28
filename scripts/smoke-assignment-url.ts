@@ -177,7 +177,17 @@ const fbAdidas = parseListingUrl(
 );
 assert(fbAdidas.ok === true, 'Falabella adidas OK');
 if (fbAdidas.ok) {
-  assert(fbAdidas.productId === '16682669', 'Falabella adidas ID catálogo');
+  assert(fbAdidas.productId === '17015613', 'Falabella adidas SKU de página');
+}
+
+const fbColombia = parseListingUrl(
+  'https://www.falabella.com.co/falabella-co/product/883609911/chaqueta-cortavientos-hombre-starter/883609913',
+  { expectedMarketplace: 'falabella', expectedCountry: '2' }
+);
+assert(fbColombia.ok === true, 'Falabella Colombia OK');
+if (fbColombia.ok) {
+  assert(fbColombia.productId === '883609913', 'Falabella Colombia SKU de página');
+  assert(fbColombia.countryCode === '2', 'Falabella Colombia país');
 }
 
 // Amazon .com aceptado (sin país inferido)

@@ -220,11 +220,11 @@ export interface ListingFacts {
   canonicalUrl?: string;
   marketplace?: ListingMarketplace;
   countryCode?: '1' | '2';
-  /** ID canónico para cruce A06 (-g- o sku_id / ASIN / ID Falabella). */
+  /** ID canónico para cruce A06 (-g- o sku_id / ASIN / SKU Falabella al final del path). */
   productId?: string;
   /** Temu goods_id u otro ID secundario (no cruza A06 por defecto). */
   goodsId?: string;
-  /** Falabella: SKU final en el path si difiere del ID catálogo. */
+  /** Falabella: ID catálogo en el path si difiere del SKU de página. */
   alternateProductId?: string;
   slug?: string;
   host?: string;
@@ -298,6 +298,14 @@ export interface PublicResult {
   stages: StagesMap;
   answers: Record<string, AnswerValue>;
   updatedAt: string;
+}
+
+/** Fila del listado público /productosEvaluados (sin datos del mystery). */
+export interface ProductoEvaluado {
+  producto: string;
+  categoria?: string;
+  categoriaOtra?: string;
+  pais?: string;
 }
 
 export interface PostulanteSummary {

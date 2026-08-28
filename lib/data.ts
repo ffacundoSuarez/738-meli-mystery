@@ -9,6 +9,7 @@ import {
   PendingReviewItem,
   PostulanteSummary,
   PublicResult,
+  ProductoEvaluado,
   ResponseStatus,
   ReviewFlagsMap,
   StagesMap,
@@ -129,6 +130,24 @@ export async function saveStageByToken(
   });
   if (error) throw error;
   return parseResponse(data as Record<string, unknown>);
+}
+
+// --- Productos evaluados (listado público) ---------------------------------
+
+function parseProductoEvaluado(raw: Record<string, unknown>): ProductoEvaluado {
+  return {
+    producto: String(raw.producto ?? ''),
+    categoria: raw.categoria as string | undefined,
+    categoriaOtra: raw.categoriaOtra as string | undefined,
+    pais: raw.pais as string | undefined,
+  };
+}
+
+/** Listado público A03 + A10 para mystery shoppers (sin identificadores). */
+export async function getProductosEvaluados(): Promise<ProductoEvaluado[]> {
+  const { data, error } = await supabase.rpc('meli_get_productos_evaluados');
+  if (error) throw error;
+  return ((data as Record<string, unknown>[]) || []).map(parseProductoEvaluado);
 }
 
 // --- Vista pública --------------------------------------------------------

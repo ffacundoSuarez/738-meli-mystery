@@ -26,7 +26,6 @@ const FORBIDDEN = [
 /** Textos de acompañamiento (Otro/especificar) que no están como enunciado
  *  independiente en el .docx — se aceptan si el fragmento clave está en fiel. */
 const COMPANION_ALLOW = new Set([
-  'A10. Especifique la categoría',
   'A13. Especifique vendido por',
   // A11.B: pregunta nueva (Word posterior al 03.08)
   'A11.B Precio del producto en moneda local al momento de la compra.',
