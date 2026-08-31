@@ -135,15 +135,20 @@ export async function saveStageByToken(
 // --- Productos evaluados (listado público) ---------------------------------
 
 function parseProductoEvaluado(raw: Record<string, unknown>): ProductoEvaluado {
+  const titulo =
+    typeof raw.tituloPublicacion === 'string'
+      ? raw.tituloPublicacion.trim()
+      : '';
   return {
     producto: String(raw.producto ?? ''),
+    tituloPublicacion: titulo || undefined,
     categoria: raw.categoria as string | undefined,
     categoriaOtra: raw.categoriaOtra as string | undefined,
     pais: raw.pais as string | undefined,
   };
 }
 
-/** Listado público A03 + A10 para mystery shoppers (sin identificadores). */
+/** Listado público A03 + A04 + A10 para mystery shoppers (sin identificadores). */
 export async function getProductosEvaluados(): Promise<ProductoEvaluado[]> {
   const { data, error } = await supabase.rpc('meli_get_productos_evaluados');
   if (error) throw error;
