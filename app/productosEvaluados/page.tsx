@@ -54,9 +54,11 @@ export default function ProductosEvaluadosPage() {
     const term = searchTerm.toLowerCase().trim();
     return productos.filter((row) => {
       const cat = categoriaLabel(row);
+      const titulo = (row.tituloPublicacion ?? '').toLowerCase();
       const matchesSearch =
         term === '' ||
         row.producto.toLowerCase().includes(term) ||
+        titulo.includes(term) ||
         cat.toLowerCase().includes(term);
       const matchesPais = filterPais === 'all' || row.pais === filterPais;
       const matchesCategoria =
@@ -100,7 +102,7 @@ export default function ProductosEvaluadosPage() {
               <div className="relative flex-1 min-w-[180px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por producto o categoría..."
+                  placeholder="Buscar por producto, título o categoría..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -155,13 +157,16 @@ export default function ProductosEvaluadosPage() {
                     <tr className="border-b bg-muted/40">
                       <th className="text-left p-4 font-medium">País</th>
                       <th className="text-left p-4 font-medium">Producto</th>
+                      <th className="text-left p-4 font-medium">
+                        Título de la publicación
+                      </th>
                       <th className="text-left p-4 font-medium">Categoría</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((row, index) => (
                       <tr
-                        key={`${row.pais}-${row.producto}-${row.categoria}-${index}`}
+                        key={`${row.pais}-${row.producto}-${row.tituloPublicacion ?? ''}-${row.categoria}-${index}`}
                         className="border-b last:border-0 hover:bg-muted/20"
                       >
                         <td className="p-4">
@@ -171,6 +176,11 @@ export default function ProductosEvaluadosPage() {
                           </span>
                         </td>
                         <td className="p-4">{row.producto}</td>
+                        <td className="p-4 max-w-md">
+                          {row.tituloPublicacion?.trim() || (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
                         <td className="p-4">{categoriaLabel(row)}</td>
                       </tr>
                     ))}

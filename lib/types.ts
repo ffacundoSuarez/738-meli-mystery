@@ -303,6 +303,8 @@ export interface PublicResult {
 /** Fila del listado público /productosEvaluados (sin datos del mystery). */
 export interface ProductoEvaluado {
   producto: string;
+  /** A04 — título exacto de la publicación (puede faltar en respuestas viejas). */
+  tituloPublicacion?: string;
   categoria?: string;
   categoriaOtra?: string;
   pais?: string;
