@@ -131,8 +131,26 @@ function isBlankAnswer(value: AnswerValue | undefined): boolean {
 }
 
 /**
+ * Aplica los valores bloqueados (lockedRules / assignmentLock / lockedIf) in-place.
+ * Debe correr antes de `computed` para que las fórmulas lean el valor fijo
+ * (ej. A21=0 Falabella+Chile → A21.2=0.00), y después por si un computed queda bloqueado.
+ */
+function applyLocks(
+  questions: Question[],
+  target: Record<string, AnswerValue>
+): void {
+  for (const q of questions) {
+    const locked = getLockedValue(q, target);
+    if (locked !== undefined) {
+      target[q.id] = locked;
+    }
+  }
+}
+
+/**
  * Evalúa defaults y campos `computed` y mergea el resultado en answers
  * para que viaje al jsonb (exports, dashboard) sin recalcular.
+ * Orden: defaults → locks → computed → locks → listingFacts/crossChecks.
  */
 export function applyComputedAnswers(
   questions: Question[],
@@ -145,6 +163,8 @@ export function applyComputedAnswers(
       next[q.id] = q.defaultValue;
     }
   }
+  // Locks antes de computed: A21 bloqueado en 0 debe alimentar A21.2 (usdFrom).
+  applyLocks(questions, next);
   for (const q of questions) {
     if (!q.computed) continue;
     try {
@@ -153,12 +173,8 @@ export function applyComputedAnswers(
       // No bloquear el flujo si una fórmula falla; dejar sin valor
     }
   }
-  for (const q of questions) {
-    const locked = getLockedValue(q, next);
-    if (locked !== undefined) {
-      next[q.id] = locked;
-    }
-  }
+  // Segunda pasada: un campo computed no debe pisar un lock activo.
+  applyLocks(questions, next);
   return applyCrossChecks(applyListingFacts(next));
 }
 

@@ -11,6 +11,7 @@
     "smoke:assignment": "npx tsx scripts/smoke-assignment-url.ts",
     "smoke:listing": "npx tsx scripts/smoke-listing-normalize.ts",
     "smoke:cross-checks": "npx tsx scripts/smoke-cross-checks.ts",
+    "smoke:locks": "npx tsx scripts/smoke-computed-locks.ts",
     "verify:fidelity": "npx tsx scripts/verificar-fidelidad.ts"
   },
   "dependencies": {
