@@ -13,6 +13,7 @@ import { PublicResult, StageStatus, SurveyResponse } from './types';
 const STAGE_STATUS_EXPORT_LABEL: Record<StageStatus, string> = {
   pendiente: 'Pendiente',
   en_revision: 'En revisión',
+  revisado: 'Revisado',
   aprobada: 'Aprobada',
   rechazada: 'Rechazada',
 };

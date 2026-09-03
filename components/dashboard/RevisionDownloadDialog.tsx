@@ -26,12 +26,14 @@ import { toast } from 'sonner';
 export type DownloadEstado =
   | 'aprobada'
   | 'en_revision'
+  | 'revisado'
   | 'rechazada'
   | 'borrador';
 
 const ESTADO_OPTIONS: { value: DownloadEstado; label: string }[] = [
   { value: 'aprobada', label: 'Aprobadas' },
   { value: 'en_revision', label: 'En revisión' },
+  { value: 'revisado', label: 'Revisados' },
   { value: 'rechazada', label: 'Rechazadas' },
   { value: 'borrador', label: 'Borradores / pendientes' },
 ];

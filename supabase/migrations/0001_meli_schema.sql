@@ -745,9 +745,10 @@ begin
 end;
 $$;
 
--- Aprobar / rechazar / reabrir una etapa.
+-- Aprobar / rechazar / marcar revisado / reabrir una etapa.
 -- 'rechazar' con p_review_flags marca preguntas puntuales a corregir.
 -- 'en_revision' reabre una etapa aprobada conservando las flags existentes.
+-- 'revisado' marca revisión interna (no visible al cliente).
 create or replace function public.meli_admin_review_stage(
   p_passcode text,
   p_response_id text,
@@ -776,13 +777,14 @@ begin
     raise exception 'Passcode inválido';
   end if;
 
-  if p_action not in ('aprobar', 'rechazar', 'en_revision') then
+  if p_action not in ('aprobar', 'rechazar', 'en_revision', 'revisado') then
     raise exception 'Acción inválida';
   end if;
 
   v_new_status := case p_action
     when 'aprobar' then 'aprobada'
     when 'rechazar' then 'rechazada'
+    when 'revisado' then 'revisado'
     else 'en_revision'
   end;
 
@@ -802,7 +804,7 @@ begin
   elsif p_action = 'aprobar' then
     v_flags := public.meli_clear_review_flags_for_section(v_flags, p_section_id);
   end if;
-  -- en_revision: no borrar flags existentes (Ops puede retomar correcciones)
+  -- en_revision / revisado: no borrar flags existentes (Ops puede retomar correcciones)
 
   v_stage_patch := jsonb_build_object(
     'status', v_new_status,
@@ -823,8 +825,8 @@ begin
     case
       when p_action = 'aprobar' then
         (coalesce(v_stages -> p_section_id, '{}'::jsonb) || v_stage_patch) - 'rejectionMessage'
-      when p_action = 'en_revision' then
-        -- Reabrir: limpia mensaje de rechazo; conserva flags de revisión
+      when p_action in ('en_revision', 'revisado') then
+        -- Reabrir o marcar revisado: limpia mensaje de rechazo; conserva flags
         (coalesce(v_stages -> p_section_id, '{}'::jsonb) || v_stage_patch) - 'rejectionMessage'
       when nullif(trim(p_rejection_message), '') is null then
         (coalesce(v_stages -> p_section_id, '{}'::jsonb) || v_stage_patch) - 'rejectionMessage'

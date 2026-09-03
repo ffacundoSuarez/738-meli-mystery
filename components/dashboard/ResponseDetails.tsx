@@ -98,6 +98,7 @@ export type ResponseDetailsMode = 'revision' | 'results';
 export const REVISION_STATUS_LABELS: Record<StageStatus, string> = {
   pendiente: 'Pendiente de respuesta',
   en_revision: 'Revisar',
+  revisado: 'Revisado',
   aprobada: 'Aprobada',
   rechazada: 'Rechazada',
 };
@@ -110,6 +111,7 @@ const RESULTS_STATUS_LABELS: Record<string, string> = {
 export const STAGE_STATUS_COLORS: Record<string, string> = {
   pendiente: 'bg-slate-100 text-slate-600 border-slate-200',
   en_revision: 'bg-amber-50 text-amber-800 border-amber-300',
+  revisado: 'bg-sky-50 text-sky-800 border-sky-300',
   aprobada: 'bg-green-50 text-green-700 border-green-200',
   rechazada: 'bg-red-50 text-red-700 border-red-200',
 };
@@ -121,7 +123,7 @@ interface ResponseDetailsProps {
   allowEditAnswers?: boolean;
   onApproveStage?: (sectionId: string) => void;
   onSendCorrections?: (sectionId: string, reviewFlags: ReviewFlagsMap) => void | Promise<void>;
-  /** Cambia el estado de una etapa (en_revision / aprobada / rechazada) sin exigir flags */
+  /** Cambia el estado de una etapa (en_revision / revisado / aprobada / rechazada) sin exigir flags */
   onSetStageStatus?: (sectionId: string, status: StageStatus) => void | Promise<void>;
   onSaveAnswers?: (answers: Record<string, AnswerValue>) => void | Promise<void>;
   actionLoading?: string | null;
@@ -263,7 +265,12 @@ function renderAnswerCell(
 }
 
 function stageWasSubmitted(status: StageStatus | undefined): boolean {
-  return status === 'en_revision' || status === 'aprobada' || status === 'rechazada';
+  return (
+    status === 'en_revision' ||
+    status === 'revisado' ||
+    status === 'aprobada' ||
+    status === 'rechazada'
+  );
 }
 
 /** Vacío shopper: undefined, null, '' o array vacío. */
@@ -615,7 +622,9 @@ export function ResponseDetails({
     if (!module || !isModuleVisible(module, activeAnswers)) return null;
 
     const stageStatus = stages[sectionId]?.status;
-    const canMarkReview = showStageActions && stageStatus === 'en_revision';
+    const canMarkReview =
+      showStageActions &&
+      (stageStatus === 'en_revision' || stageStatus === 'revisado');
 
     const questions = getVisibleQuestions(module, activeAnswers).filter(
       (q) =>
@@ -1040,6 +1049,7 @@ export function ResponseDetails({
         className={cn(
           'rounded-xl border p-5 space-y-4',
           stageStatus === 'en_revision' && mode === 'revision' && 'border-amber-300 bg-amber-50/30',
+          stageStatus === 'revisado' && mode === 'revision' && 'border-sky-300 bg-sky-50/30',
           stageStatus === 'pendiente' && mode === 'revision' && 'border-dashed opacity-90'
         )}
       >
@@ -1089,13 +1099,15 @@ export function ResponseDetails({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en_revision">En revisión</SelectItem>
+                    <SelectItem value="revisado">Revisado</SelectItem>
                     <SelectItem value="aprobada">Aprobada</SelectItem>
                     <SelectItem value="rechazada">Rechazada</SelectItem>
                   </SelectContent>
                 </Select>
               )}
 
-            {showStageActions && stageStatus === 'en_revision' && (
+            {showStageActions &&
+              (stageStatus === 'en_revision' || stageStatus === 'revisado') && (
               <>
                 <Button
                   size="sm"
@@ -1245,6 +1257,8 @@ export function ResponseDetails({
                     ? 'bg-green-500 text-white border-green-500'
                     : status === 'en_revision'
                     ? 'bg-amber-400 text-amber-950 border-amber-400'
+                    : status === 'revisado'
+                    ? 'bg-sky-400 text-sky-950 border-sky-400'
                     : status === 'rechazada'
                     ? 'bg-red-400 text-white border-red-400'
                     : 'bg-muted text-muted-foreground border-muted-foreground/30'
