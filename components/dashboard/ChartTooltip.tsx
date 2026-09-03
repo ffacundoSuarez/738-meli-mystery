@@ -14,6 +14,7 @@ export const PIE_COLORS = [
 export const STAGE_STACK_COLORS = {
   pendiente: '#94a3b8',
   en_revision: '#f59e0b',
+  revisado: '#0ea5e9',
   aprobada: '#22c55e',
   rechazada: '#ef4444',
 };

@@ -13,6 +13,7 @@ import { AnswerValue, QuestionOption, StageStatus, StagesMap } from './types';
 const STAGE_SHORT: Record<StageStatus, string> = {
   pendiente: 'Pendiente',
   en_revision: 'En revisión',
+  revisado: 'Revisado',
   aprobada: 'Aprobada',
   rechazada: 'Rechazada',
 };

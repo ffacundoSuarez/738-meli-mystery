@@ -127,18 +127,21 @@ export default function EstadisticasPage() {
       };
       let pendiente = 0;
       let en_revision = 0;
+      let revisado = 0;
       let aprobada = 0;
       let rechazada = 0;
       for (const r of realResponses) {
         const st = r.stages?.[sectionId]?.status;
         if (st === 'pendiente') pendiente++;
         else if (st === 'en_revision') en_revision++;
+        else if (st === 'revisado') revisado++;
         else if (st === 'aprobada') aprobada++;
         else if (st === 'rechazada') rechazada++;
         else pendiente++; // sin stage iniciada cuenta como pendiente
       }
       row.pendiente = pendiente;
       row.en_revision = en_revision;
+      row.revisado = revisado;
       row.aprobada = aprobada;
       row.rechazada = rechazada;
       return row;
@@ -205,17 +208,19 @@ export default function EstadisticasPage() {
   const stageStats = useMemo(() => {
     let pending = 0;
     let inReview = 0;
+    let reviewed = 0;
     let approved = 0;
     let rejected = 0;
     for (const r of realResponses) {
       for (const st of Object.values(r.stages || {})) {
         if (st.status === 'pendiente') pending++;
         else if (st.status === 'en_revision') inReview++;
+        else if (st.status === 'revisado') reviewed++;
         else if (st.status === 'aprobada') approved++;
         else if (st.status === 'rechazada') rejected++;
       }
     }
-    return { pending, inReview, approved, rejected };
+    return { pending, inReview, reviewed, approved, rejected };
   }, [realResponses]);
 
   /** Aprobadas vs rechazadas por país (etapas, no encuestas). */
@@ -276,10 +281,11 @@ export default function EstadisticasPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {[
           { label: 'Encuestas contestadas', value: realResponses.length },
           { label: 'Etapas en revisión', value: stageStats.inReview },
+          { label: 'Etapas revisadas', value: stageStats.reviewed },
           { label: 'Etapas aprobadas', value: stageStats.approved },
           { label: 'Etapas rechazadas', value: stageStats.rejected },
         ].map((m) => (
@@ -346,6 +352,12 @@ export default function EstadisticasPage() {
                     name="Aprobada"
                     stackId="a"
                     fill={STAGE_STACK_COLORS.aprobada}
+                  />
+                  <Bar
+                    dataKey="revisado"
+                    name="Revisado"
+                    stackId="a"
+                    fill={STAGE_STACK_COLORS.revisado}
                   />
                   <Bar
                     dataKey="en_revision"

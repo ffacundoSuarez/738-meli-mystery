@@ -227,7 +227,7 @@ export default function RevisionPage() {
 
   const handleReview = async (
     sectionId: string,
-    action: 'aprobar' | 'rechazar' | 'en_revision',
+    action: 'aprobar' | 'rechazar' | 'en_revision' | 'revisado',
     reviewFlags?: import('@/lib/types').ReviewFlagsMap
   ) => {
     if (!selected) return;
@@ -252,9 +252,11 @@ export default function RevisionPage() {
           ? `Etapa "${title}" aprobada`
           : action === 'en_revision'
             ? `Etapa "${title}" puesta en revisión`
-            : reviewFlags && Object.keys(reviewFlags).length > 0
-              ? `Correcciones enviadas en "${title}"`
-              : `Etapa "${title}" marcada como rechazada`;
+            : action === 'revisado'
+              ? `Etapa "${title}" marcada como revisada`
+              : reviewFlags && Object.keys(reviewFlags).length > 0
+                ? `Correcciones enviadas en "${title}"`
+                : `Etapa "${title}" marcada como rechazada`;
       toast.success(toastMsg);
     } catch {
       toast.error('No se pudo procesar la revisión');
@@ -272,7 +274,9 @@ export default function RevisionPage() {
           ? 'rechazar'
           : status === 'en_revision'
             ? 'en_revision'
-            : null;
+            : status === 'revisado'
+              ? 'revisado'
+              : null;
     if (!action) return;
     await handleReview(sectionId, action);
   };
@@ -605,6 +609,7 @@ export default function RevisionPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="en_revision">En revisión</SelectItem>
+                  <SelectItem value="revisado">Revisado</SelectItem>
                   <SelectItem value="aprobada">Aprobada</SelectItem>
                   <SelectItem value="rechazada">Rechazada</SelectItem>
                   <SelectItem value="pendiente">Pendiente</SelectItem>

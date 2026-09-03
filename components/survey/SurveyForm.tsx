@@ -53,6 +53,8 @@ import { cn } from '@/lib/utils';
 const STAGE_STATUS_TEXT: Record<StageStatus, Record<Lang, string>> = {
   pendiente: { es: 'pendiente', pt: 'pendente' },
   en_revision: { es: 'en revisión', pt: 'em revisão' },
+  // Interno Ops: el shopper sigue viendo "en revisión"
+  revisado: { es: 'en revisión', pt: 'em revisão' },
   aprobada: { es: 'aprobada', pt: 'aprovada' },
   rechazada: { es: 'rechazada', pt: 'rejeitada' },
 };
@@ -188,7 +190,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
   const isBrowsingApprovedSection =
     !showStageGate &&
     isReviewable &&
-    (currentStageStatus === 'aprobada' || currentStageStatus === 'en_revision') &&
+    (currentStageStatus === 'aprobada' ||
+      currentStageStatus === 'en_revision' ||
+      currentStageStatus === 'revisado') &&
     !correctionMode;
 
   useEffect(() => {
@@ -260,7 +264,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
       if (correctionMode && hasActiveCorrections) {
         setShowStageGate(false);
       } else {
-        setShowStageGate(status === 'aprobada' || status === 'en_revision');
+        setShowStageGate(
+          status === 'aprobada' || status === 'en_revision' || status === 'revisado'
+        );
       }
     } else {
       setShowStageGate(false);
@@ -655,11 +661,16 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     const statusStyles = {
       aprobada: 'bg-green-50 text-green-800 border-green-200',
       en_revision: 'bg-amber-50 text-amber-800 border-amber-200',
+      revisado: 'bg-amber-50 text-amber-800 border-amber-200',
       rechazada: 'bg-red-50 text-red-800 border-red-200',
     }[currentStageStatus];
 
     const StatusIcon =
-      currentStageStatus === 'aprobada' ? Check : currentStageStatus === 'en_revision' ? Clock : AlertCircle;
+      currentStageStatus === 'aprobada'
+        ? Check
+        : currentStageStatus === 'en_revision' || currentStageStatus === 'revisado'
+          ? Clock
+          : AlertCircle;
 
     return (
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-3">
@@ -755,7 +766,11 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
   if (surveyThankYou && !hasActiveCorrections) return renderThankYouScreen();
   if (isFinalized && !hasActiveCorrections) return renderFinalizedScreen();
 
-  const hideForm = showStageGate && (currentStageStatus === 'aprobada' || currentStageStatus === 'en_revision');
+  const hideForm =
+    showStageGate &&
+    (currentStageStatus === 'aprobada' ||
+      currentStageStatus === 'en_revision' ||
+      currentStageStatus === 'revisado');
   const showBottomNext = !hideForm;
   const isLastModule = isLastVisibleModule(section, currentModuleIndex, answers);
   const progressiveQuestions = currentModule
@@ -818,7 +833,8 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
                   ? 'bg-primary scale-125'
                   : stages[s.id]?.status === 'aprobada'
                   ? 'bg-green-500'
-                  : stages[s.id]?.status === 'en_revision'
+                  : stages[s.id]?.status === 'en_revision' ||
+                    stages[s.id]?.status === 'revisado'
                   ? 'bg-amber-400'
                   : stages[s.id]?.status === 'rechazada'
                   ? 'bg-red-400'

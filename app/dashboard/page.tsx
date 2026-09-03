@@ -176,12 +176,26 @@ export default function DashboardPage() {
   const paisEstado = useMemo(() => {
     const map = new Map<
       string,
-      { name: string; aprobada: number; en_revision: number; rechazada: number; total: number }
+      {
+        name: string;
+        aprobada: number;
+        en_revision: number;
+        revisado: number;
+        rechazada: number;
+        total: number;
+      }
     >();
     for (const r of answeredResponses) {
       const name = getScreeningSnapshot(r.answers).pais || 'Sin país';
       if (!map.has(name)) {
-        map.set(name, { name, aprobada: 0, en_revision: 0, rechazada: 0, total: 0 });
+        map.set(name, {
+          name,
+          aprobada: 0,
+          en_revision: 0,
+          revisado: 0,
+          rechazada: 0,
+          total: 0,
+        });
       }
       const row = map.get(name)!;
       for (const st of Object.values(r.stages || {})) {
@@ -190,6 +204,9 @@ export default function DashboardPage() {
           row.total++;
         } else if (st.status === 'en_revision') {
           row.en_revision++;
+          row.total++;
+        } else if (st.status === 'revisado') {
+          row.revisado++;
           row.total++;
         } else if (st.status === 'rechazada') {
           row.rechazada++;
@@ -369,7 +386,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>País × Estado de etapas</CardTitle>
             <CardDescription>
-              Etapas aprobadas, en revisión y rechazadas por país
+              Etapas aprobadas, en revisión, revisadas y rechazadas por país
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -390,6 +407,12 @@ export default function DashboardPage() {
                     name="Aprobada"
                     stackId="a"
                     fill={STAGE_STACK_COLORS.aprobada}
+                  />
+                  <Bar
+                    dataKey="revisado"
+                    name="Revisado"
+                    stackId="a"
+                    fill={STAGE_STACK_COLORS.revisado}
                   />
                   <Bar
                     dataKey="en_revision"
