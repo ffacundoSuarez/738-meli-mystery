@@ -15,6 +15,7 @@ const STAGE_SHORT: Record<StageStatus, string> = {
   en_revision: 'En revisión',
   revisado: 'Revisado',
   aprobada: 'Aprobada',
+  a_corregir: 'A corregir',
   rechazada: 'Rechazada',
 };
 

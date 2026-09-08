@@ -745,8 +745,10 @@ begin
 end;
 $$;
 
--- Aprobar / rechazar / marcar revisado / reabrir una etapa.
--- 'rechazar' con p_review_flags marca preguntas puntuales a corregir.
+-- Aprobar / rechazar / enviar a corregir / marcar revisado / reabrir una etapa.
+-- 'corregir' devuelve la etapa al shopper con p_review_flags: preguntas puntuales a
+-- corregir. Es el flujo normal del botón "Enviar a corregir".
+-- 'rechazar' es el descarte real (sin flags); también devuelve la edición al shopper.
 -- 'en_revision' reabre una etapa aprobada conservando las flags existentes.
 -- 'revisado' marca revisión interna (no visible al cliente).
 create or replace function public.meli_admin_review_stage(
@@ -772,18 +774,23 @@ declare
   v_now timestamptz := now();
   v_key text;
   v_entry jsonb;
+  v_devuelve boolean;
 begin
   if not public.meli_validate_passcode(p_passcode) then
     raise exception 'Passcode inválido';
   end if;
 
-  if p_action not in ('aprobar', 'rechazar', 'en_revision', 'revisado') then
+  if p_action not in ('aprobar', 'rechazar', 'corregir', 'en_revision', 'revisado') then
     raise exception 'Acción inválida';
   end if;
+
+  -- Acciones que devuelven la etapa al shopper: aceptan flags y mensaje de rechazo
+  v_devuelve := p_action in ('rechazar', 'corregir');
 
   v_new_status := case p_action
     when 'aprobar' then 'aprobada'
     when 'rechazar' then 'rechazada'
+    when 'corregir' then 'a_corregir'
     when 'revisado' then 'revisado'
     else 'en_revision'
   end;
@@ -795,7 +802,7 @@ begin
 
   v_flags := coalesce(v_row.review_flags, '{}'::jsonb);
 
-  if p_action = 'rechazar' and p_review_flags is not null and p_review_flags <> '{}'::jsonb then
+  if v_devuelve and p_review_flags is not null and p_review_flags <> '{}'::jsonb then
     -- Descartar flags ya corregidas de esta sección antes de mergear nuevas
     v_flags := public.meli_clear_review_flags_for_section(v_flags, p_section_id);
     for v_key, v_entry in select * from jsonb_each(p_review_flags) loop
@@ -804,7 +811,7 @@ begin
   elsif p_action = 'aprobar' then
     v_flags := public.meli_clear_review_flags_for_section(v_flags, p_section_id);
   end if;
-  -- en_revision / revisado: no borrar flags existentes (Ops puede retomar correcciones)
+  -- en_revision / revisado: no borrar flags existentes
 
   v_stage_patch := jsonb_build_object(
     'status', v_new_status,
@@ -812,7 +819,7 @@ begin
     'reviewedBy', p_reviewed_by
   );
 
-  if p_action = 'rechazar' and nullif(trim(p_rejection_message), '') is not null then
+  if v_devuelve and nullif(trim(p_rejection_message), '') is not null then
     v_stage_patch := v_stage_patch || jsonb_build_object(
       'rejectionMessage', trim(p_rejection_message)
     );

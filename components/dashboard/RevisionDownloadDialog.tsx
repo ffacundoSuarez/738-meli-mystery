@@ -27,6 +27,7 @@ export type DownloadEstado =
   | 'aprobada'
   | 'en_revision'
   | 'revisado'
+  | 'a_corregir'
   | 'rechazada'
   | 'borrador';
 
@@ -34,6 +35,7 @@ const ESTADO_OPTIONS: { value: DownloadEstado; label: string }[] = [
   { value: 'aprobada', label: 'Aprobadas' },
   { value: 'en_revision', label: 'En revisión' },
   { value: 'revisado', label: 'Revisados' },
+  { value: 'a_corregir', label: 'Pendientes de corrección' },
   { value: 'rechazada', label: 'Rechazadas' },
   { value: 'borrador', label: 'Borradores / pendientes' },
 ];

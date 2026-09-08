@@ -16,6 +16,7 @@ export const STAGE_STACK_COLORS = {
   en_revision: '#f59e0b',
   revisado: '#0ea5e9',
   aprobada: '#22c55e',
+  a_corregir: '#f97316',
   rechazada: '#ef4444',
 };
 
