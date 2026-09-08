@@ -56,8 +56,14 @@ const STAGE_STATUS_TEXT: Record<StageStatus, Record<Lang, string>> = {
   // Interno Ops: el shopper sigue viendo "en revisión"
   revisado: { es: 'en revisión', pt: 'em revisão' },
   aprobada: { es: 'aprobada', pt: 'aprovada' },
+  a_corregir: { es: 'pendiente de corrección', pt: 'pendente de correção' },
   rechazada: { es: 'rechazada', pt: 'rejeitada' },
 };
+
+/** Estados en los que la parte vuelve al shopper para que la edite y reenvíe */
+function isCorrectableStage(status?: StageStatus): boolean {
+  return status === 'a_corregir' || status === 'rechazada';
+}
 
 function sectionAnswersEqual(
   a: Record<string, AnswerValue>,
@@ -179,7 +185,7 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     if (!isReviewable) return false;
     if (!partHasAnswers(section, answers)) return false;
     if (!currentStageStatus || currentStageStatus === 'pendiente') return true;
-    if (currentStageStatus === 'rechazada') return hasSectionEdits;
+    if (isCorrectableStage(currentStageStatus)) return hasSectionEdits;
     return hasSectionEdits;
   }, [isReviewable, section, answers, currentStageStatus, hasSectionEdits]);
 
@@ -662,6 +668,7 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
       aprobada: 'bg-green-50 text-green-800 border-green-200',
       en_revision: 'bg-amber-50 text-amber-800 border-amber-200',
       revisado: 'bg-amber-50 text-amber-800 border-amber-200',
+      a_corregir: 'bg-orange-50 text-orange-800 border-orange-200',
       rechazada: 'bg-red-50 text-red-800 border-red-200',
     }[currentStageStatus];
 
@@ -680,14 +687,14 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
             &quot;{pick(section.title, section.titlePt, lang)}&quot; {t('stageIs', lang)}{' '}
             {STAGE_STATUS_TEXT[currentStageStatus][lang]}
           </div>
-          {currentStageStatus !== 'rechazada' && (
+          {!isCorrectableStage(currentStageStatus) && (
             <p className="text-sm opacity-80">
               {nextSectionTitle ? t('completeNext', lang) : t('lastPartSent', lang)}
             </p>
           )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          {nextSectionTitle && currentStageStatus !== 'rechazada' && (
+          {nextSectionTitle && !isCorrectableStage(currentStageStatus) && (
             <Button onClick={goToNextStage} className="flex-1">
               {t('startPart', lang)} {nextSectionTitle}
               <ChevronRight className="w-4 h-4 ml-2" />
@@ -836,6 +843,8 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
                   : stages[s.id]?.status === 'en_revision' ||
                     stages[s.id]?.status === 'revisado'
                   ? 'bg-amber-400'
+                  : stages[s.id]?.status === 'a_corregir'
+                  ? 'bg-orange-400'
                   : stages[s.id]?.status === 'rechazada'
                   ? 'bg-red-400'
                   : index < currentSection

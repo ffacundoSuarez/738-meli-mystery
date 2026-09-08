@@ -227,7 +227,7 @@ export default function RevisionPage() {
 
   const handleReview = async (
     sectionId: string,
-    action: 'aprobar' | 'rechazar' | 'en_revision' | 'revisado',
+    action: 'aprobar' | 'rechazar' | 'corregir' | 'en_revision' | 'revisado',
     reviewFlags?: import('@/lib/types').ReviewFlagsMap
   ) => {
     if (!selected) return;
@@ -254,7 +254,7 @@ export default function RevisionPage() {
             ? `Etapa "${title}" puesta en revisión`
             : action === 'revisado'
               ? `Etapa "${title}" marcada como revisada`
-              : reviewFlags && Object.keys(reviewFlags).length > 0
+              : action === 'corregir'
                 ? `Correcciones enviadas en "${title}"`
                 : `Etapa "${title}" marcada como rechazada`;
       toast.success(toastMsg);
@@ -270,13 +270,15 @@ export default function RevisionPage() {
     const action =
       status === 'aprobada'
         ? 'aprobar'
-        : status === 'rechazada'
-          ? 'rechazar'
-          : status === 'en_revision'
-            ? 'en_revision'
-            : status === 'revisado'
-              ? 'revisado'
-              : null;
+        : status === 'a_corregir'
+          ? 'corregir'
+          : status === 'rechazada'
+            ? 'rechazar'
+            : status === 'en_revision'
+              ? 'en_revision'
+              : status === 'revisado'
+                ? 'revisado'
+                : null;
     if (!action) return;
     await handleReview(sectionId, action);
   };
@@ -543,7 +545,7 @@ export default function RevisionPage() {
               onUnlockSurvey={handleUnlockSurvey}
               onApproveStage={(sectionId) => handleReview(sectionId, 'aprobar')}
               onSendCorrections={(sectionId, flags) =>
-                handleReview(sectionId, 'rechazar', flags)
+                handleReview(sectionId, 'corregir', flags)
               }
               onSetStageStatus={handleSetStageStatus}
               onSaveAnswers={handleSaveAnswers}
@@ -611,6 +613,7 @@ export default function RevisionPage() {
                   <SelectItem value="en_revision">En revisión</SelectItem>
                   <SelectItem value="revisado">Revisado</SelectItem>
                   <SelectItem value="aprobada">Aprobada</SelectItem>
+                  <SelectItem value="a_corregir">Pendiente de corrección</SelectItem>
                   <SelectItem value="rechazada">Rechazada</SelectItem>
                   <SelectItem value="pendiente">Pendiente</SelectItem>
                 </SelectContent>

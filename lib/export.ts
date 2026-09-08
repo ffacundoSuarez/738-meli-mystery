@@ -15,6 +15,7 @@ const STAGE_STATUS_EXPORT_LABEL: Record<StageStatus, string> = {
   en_revision: 'En revisión',
   revisado: 'Revisado',
   aprobada: 'Aprobada',
+  a_corregir: 'Pendiente de corrección',
   rechazada: 'Rechazada',
 };
 

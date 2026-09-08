@@ -181,6 +181,7 @@ export default function DashboardPage() {
         aprobada: number;
         en_revision: number;
         revisado: number;
+        a_corregir: number;
         rechazada: number;
         total: number;
       }
@@ -193,6 +194,7 @@ export default function DashboardPage() {
           aprobada: 0,
           en_revision: 0,
           revisado: 0,
+          a_corregir: 0,
           rechazada: 0,
           total: 0,
         });
@@ -207,6 +209,9 @@ export default function DashboardPage() {
           row.total++;
         } else if (st.status === 'revisado') {
           row.revisado++;
+          row.total++;
+        } else if (st.status === 'a_corregir') {
+          row.a_corregir++;
           row.total++;
         } else if (st.status === 'rechazada') {
           row.rechazada++;
@@ -386,7 +391,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>País × Estado de etapas</CardTitle>
             <CardDescription>
-              Etapas aprobadas, en revisión, revisadas y rechazadas por país
+              Etapas aprobadas, en revisión, revisadas, a corregir y rechazadas por país
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -419,6 +424,12 @@ export default function DashboardPage() {
                     name="En revisión"
                     stackId="a"
                     fill={STAGE_STACK_COLORS.en_revision}
+                  />
+                  <Bar
+                    dataKey="a_corregir"
+                    name="Pendiente de corrección"
+                    stackId="a"
+                    fill={STAGE_STACK_COLORS.a_corregir}
                   />
                   <Bar
                     dataKey="rechazada"

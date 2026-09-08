@@ -1,3 +1,6 @@
+-- ⚠️ Esta copia de meli_admin_review_stage quedó vieja: 0012 la reemplaza sumando
+-- la acción 'corregir' / estado 'a_corregir'. Se mantiene por historial.
+--
 -- Estado interno "revisado": pasó por revisor, aún no aprobado para cliente.
 -- No afecta resultados públicos ni meli_max_approved_stage (solo 'aprobada').
 

@@ -129,6 +129,7 @@ export default function EstadisticasPage() {
       let en_revision = 0;
       let revisado = 0;
       let aprobada = 0;
+      let a_corregir = 0;
       let rechazada = 0;
       for (const r of realResponses) {
         const st = r.stages?.[sectionId]?.status;
@@ -136,6 +137,7 @@ export default function EstadisticasPage() {
         else if (st === 'en_revision') en_revision++;
         else if (st === 'revisado') revisado++;
         else if (st === 'aprobada') aprobada++;
+        else if (st === 'a_corregir') a_corregir++;
         else if (st === 'rechazada') rechazada++;
         else pendiente++; // sin stage iniciada cuenta como pendiente
       }
@@ -143,6 +145,7 @@ export default function EstadisticasPage() {
       row.en_revision = en_revision;
       row.revisado = revisado;
       row.aprobada = aprobada;
+      row.a_corregir = a_corregir;
       row.rechazada = rechazada;
       return row;
     });
@@ -210,6 +213,7 @@ export default function EstadisticasPage() {
     let inReview = 0;
     let reviewed = 0;
     let approved = 0;
+    let toFix = 0;
     let rejected = 0;
     for (const r of realResponses) {
       for (const st of Object.values(r.stages || {})) {
@@ -217,10 +221,11 @@ export default function EstadisticasPage() {
         else if (st.status === 'en_revision') inReview++;
         else if (st.status === 'revisado') reviewed++;
         else if (st.status === 'aprobada') approved++;
+        else if (st.status === 'a_corregir') toFix++;
         else if (st.status === 'rechazada') rejected++;
       }
     }
-    return { pending, inReview, reviewed, approved, rejected };
+    return { pending, inReview, reviewed, approved, toFix, rejected };
   }, [realResponses]);
 
   /** Aprobadas vs rechazadas por país (etapas, no encuestas). */
@@ -281,12 +286,13 @@ export default function EstadisticasPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {[
           { label: 'Encuestas contestadas', value: realResponses.length },
           { label: 'Etapas en revisión', value: stageStats.inReview },
           { label: 'Etapas revisadas', value: stageStats.reviewed },
           { label: 'Etapas aprobadas', value: stageStats.approved },
+          { label: 'Etapas a corregir', value: stageStats.toFix },
           { label: 'Etapas rechazadas', value: stageStats.rejected },
         ].map((m) => (
           <Card key={m.label}>
@@ -364,6 +370,12 @@ export default function EstadisticasPage() {
                     name="En revisión"
                     stackId="a"
                     fill={STAGE_STACK_COLORS.en_revision}
+                  />
+                  <Bar
+                    dataKey="a_corregir"
+                    name="Pendiente de corrección"
+                    stackId="a"
+                    fill={STAGE_STACK_COLORS.a_corregir}
                   />
                   <Bar
                     dataKey="rechazada"

@@ -144,7 +144,15 @@ export interface SurveySection {
 }
 
 export type ResponseStatus = 'borrador' | 'en_revision' | 'publicado' | 'rechazado';
-export type StageStatus = 'pendiente' | 'en_revision' | 'revisado' | 'aprobada' | 'rechazada';
+export type StageStatus =
+  | 'pendiente'
+  | 'en_revision'
+  | 'revisado'
+  | 'aprobada'
+  /** Devuelta al shopper con correcciones marcadas (flujo normal) */
+  | 'a_corregir'
+  /** Descartada por Ops (no es una corrección) */
+  | 'rechazada';
 
 export interface StageInfo {
   status: StageStatus;

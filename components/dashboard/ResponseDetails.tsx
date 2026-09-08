@@ -100,11 +100,13 @@ export const REVISION_STATUS_LABELS: Record<StageStatus, string> = {
   en_revision: 'Revisar',
   revisado: 'Revisado',
   aprobada: 'Aprobada',
+  a_corregir: 'Pendiente de corrección',
   rechazada: 'Rechazada',
 };
 
 const RESULTS_STATUS_LABELS: Record<string, string> = {
   aprobada: 'Aprobada',
+  a_corregir: 'Pendiente de corrección',
   rechazada: 'Rechazada',
 };
 
@@ -113,6 +115,7 @@ export const STAGE_STATUS_COLORS: Record<string, string> = {
   en_revision: 'bg-amber-50 text-amber-800 border-amber-300',
   revisado: 'bg-sky-50 text-sky-800 border-sky-300',
   aprobada: 'bg-green-50 text-green-700 border-green-200',
+  a_corregir: 'bg-orange-50 text-orange-800 border-orange-300',
   rechazada: 'bg-red-50 text-red-700 border-red-200',
 };
 
@@ -123,7 +126,7 @@ interface ResponseDetailsProps {
   allowEditAnswers?: boolean;
   onApproveStage?: (sectionId: string) => void;
   onSendCorrections?: (sectionId: string, reviewFlags: ReviewFlagsMap) => void | Promise<void>;
-  /** Cambia el estado de una etapa (en_revision / revisado / aprobada / rechazada) sin exigir flags */
+  /** Cambia el estado de una etapa (en_revision / revisado / aprobada / a_corregir / rechazada) sin exigir flags */
   onSetStageStatus?: (sectionId: string, status: StageStatus) => void | Promise<void>;
   onSaveAnswers?: (answers: Record<string, AnswerValue>) => void | Promise<void>;
   actionLoading?: string | null;
@@ -269,6 +272,7 @@ function stageWasSubmitted(status: StageStatus | undefined): boolean {
     status === 'en_revision' ||
     status === 'revisado' ||
     status === 'aprobada' ||
+    status === 'a_corregir' ||
     status === 'rechazada'
   );
 }
@@ -413,7 +417,7 @@ export function ResponseDetails({
     mode === 'results'
       ? REVIEWABLE_SECTIONS.filter((id) => {
           const st = stages[id]?.status;
-          return st === 'aprobada' || st === 'rechazada';
+          return st === 'aprobada' || st === 'a_corregir' || st === 'rechazada';
         })
       : REVIEWABLE_SECTIONS;
 
@@ -1022,7 +1026,12 @@ export function ResponseDetails({
       )
     );
 
-    if (mode === 'results' && stageStatus !== 'aprobada' && stageStatus !== 'rechazada') {
+    if (
+      mode === 'results' &&
+      stageStatus !== 'aprobada' &&
+      stageStatus !== 'a_corregir' &&
+      stageStatus !== 'rechazada'
+    ) {
       return null;
     }
 
@@ -1101,6 +1110,7 @@ export function ResponseDetails({
                     <SelectItem value="en_revision">En revisión</SelectItem>
                     <SelectItem value="revisado">Revisado</SelectItem>
                     <SelectItem value="aprobada">Aprobada</SelectItem>
+                    <SelectItem value="a_corregir">Pendiente de corrección</SelectItem>
                     <SelectItem value="rechazada">Rechazada</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1259,6 +1269,8 @@ export function ResponseDetails({
                     ? 'bg-amber-400 text-amber-950 border-amber-400'
                     : status === 'revisado'
                     ? 'bg-sky-400 text-sky-950 border-sky-400'
+                    : status === 'a_corregir'
+                    ? 'bg-orange-400 text-white border-orange-400'
                     : status === 'rechazada'
                     ? 'bg-red-400 text-white border-red-400'
                     : 'bg-muted text-muted-foreground border-muted-foreground/30'
