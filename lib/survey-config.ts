@@ -102,6 +102,29 @@ export function getResumeSectionIndex(stages: Record<string, { status?: string }
   return maxIdx;
 }
 
+/** Primera parte en a_corregir (o rechazada), para reanudar sin flags de pregunta */
+export function getFirstCorrectableSectionIndex(
+  stages: Record<string, { status?: string }> = {}
+): number | null {
+  for (const sectionId of REVIEWABLE_SECTIONS) {
+    const st = stages[sectionId]?.status;
+    if (st === 'a_corregir' || st === 'rechazada') {
+      return getSectionIndex(sectionId);
+    }
+  }
+  return null;
+}
+
+/** ¿Alguna parte vuelve al shopper por corrección? */
+export function hasCorrectableStage(
+  stages: Record<string, { status?: string }> = {}
+): boolean {
+  return REVIEWABLE_SECTIONS.some((sectionId) => {
+    const st = stages[sectionId]?.status;
+    return st === 'a_corregir' || st === 'rechazada';
+  });
+}
+
 export function getMaxApprovedStage(stages: Record<string, { status?: string }>): string | null {
   let maxIdx = -1;
   let maxStage: string | null = null;

@@ -8,7 +8,7 @@ import {
   evidenciasModule,
   neq,
 } from './constants';
-import { usdFrom, totalsMatchLabel } from './computed';
+import { usdFrom, totalsMatchLabel, naturalDaysBetween } from './computed';
 
 // Parte 3 — cuestionario 03.08 (E + F). IDs internos estables.
 // Desviación de fecha eliminada (no figura desde Word 31.07).
@@ -137,9 +137,10 @@ export const parte3: SurveySection = {
         {
           id: 'q35-dias-llegada',
           codigoOriginal: 'F07',
-          text: 'F07. ¿Cuántos días naturales transcurren desde la fecha de compra hasta la entrega del producto?',
+          text: 'F07. ¿Cuántos días naturales transcurren desde la fecha de compra hasta la entrega del producto? VARIABLE AUXILIAR AUTOMÁTICA.',
           type: 'number',
-          required: true,
+          required: false,
+          computed: naturalDaysBetween('q01-fecha-compra', 'q32-fecha-recepcion'),
         },
         {
           id: 'q36-llego-segun-anuncio',

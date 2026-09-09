@@ -40,6 +40,7 @@ function parseResponse(raw: Record<string, unknown>): SurveyResponse {
     reviewedAt: raw.reviewedAt as string | undefined,
     reviewedBy: raw.reviewedBy as string | undefined,
     isPrueba: Boolean(raw.isPrueba),
+    isDestacada: Boolean(raw.isDestacada),
     createdAt: String(raw.createdAt),
     updatedAt: String(raw.updatedAt),
   };
@@ -96,6 +97,7 @@ function parsePostulante(raw: Record<string, unknown>): PostulanteSummary {
     answers: (raw.answers as Record<string, AnswerValue>) || undefined,
     status: raw.status as ResponseStatus | undefined,
     isPrueba: Boolean(raw.isPrueba),
+    isDestacada: Boolean(raw.isDestacada),
     createdAt: String(raw.createdAt),
     updatedAt: raw.updatedAt as string | undefined,
   };
@@ -367,6 +369,20 @@ export async function adminUnlockSurvey(responseId: string): Promise<SurveyRespo
   const { data, error } = await supabase.rpc('meli_admin_unlock_survey', {
     p_passcode: requireOpsPasscode(),
     p_response_id: responseId,
+  });
+  if (error) throw error;
+  return parseResponse(data as Record<string, unknown>);
+}
+
+/** Marca o quita el destacado visual en listados Ops */
+export async function adminSetDestacada(
+  responseId: string,
+  destacada: boolean
+): Promise<SurveyResponse> {
+  const { data, error } = await supabase.rpc('meli_admin_set_destacada', {
+    p_passcode: requireOpsPasscode(),
+    p_response_id: responseId,
+    p_destacada: destacada,
   });
   if (error) throw error;
   return parseResponse(data as Record<string, unknown>);

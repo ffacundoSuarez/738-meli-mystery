@@ -419,7 +419,13 @@ export default function RevisionPage() {
             }).filter(Boolean) as { sectionId: string; status: StageStatus }[];
 
             return (
-              <Card key={response.id} className="hover:shadow-md transition-shadow">
+              <Card
+                key={response.id}
+                className={cn(
+                  'hover:shadow-md transition-shadow',
+                  response.isDestacada && 'border-violet-300 bg-violet-50/70'
+                )}
+              >
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex-1 min-w-0 space-y-2">
@@ -431,6 +437,14 @@ export default function RevisionPage() {
                         {response.isPrueba && (
                           <Badge variant="outline" className="text-[10px] py-0">
                             Prueba
+                          </Badge>
+                        )}
+                        {response.isDestacada && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] py-0 bg-violet-100 text-violet-800 border-violet-300"
+                          >
+                            Destacada
                           </Badge>
                         )}
                       </div>
