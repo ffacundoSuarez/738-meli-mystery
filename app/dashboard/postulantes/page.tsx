@@ -5,6 +5,7 @@ import {
   adminCreatePostulante,
   adminDeletePostulante,
   adminListResponsesSummary,
+  adminSetDestacada,
   adminUnlockSurvey,
   adminUpdatePostulante,
 } from '@/lib/data';
@@ -47,11 +48,13 @@ import {
   Pencil,
   Plus,
   Search,
+  Star,
   Trash2,
   Unlock,
   UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 function getSurveyUrl(accessToken: string) {
   if (typeof window === 'undefined') return `/encuesta/${accessToken}`;
@@ -75,6 +78,7 @@ export default function PostulantesPage() {
   const [editReclutador, setEditReclutador] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [reopeningId, setReopeningId] = useState<string | null>(null);
+  const [destacandoId, setDestacandoId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPais, setFilterPais] = useState('all');
   const [filterTipo, setFilterTipo] = useState<'all' | 'real' | 'prueba'>('all');
@@ -266,6 +270,31 @@ export default function PostulantesPage() {
     }
   };
 
+  /** Marca o quita el color especial en listados Ops */
+  const handleToggleDestacada = async (postulante: SurveyResponse) => {
+    setDestacandoId(postulante.id);
+    const next = !postulante.isDestacada;
+    try {
+      const updated = await adminSetDestacada(postulante.id, next);
+      setPostulantes((prev) =>
+        prev.map((p) =>
+          p.id === updated.id
+            ? { ...p, isDestacada: updated.isDestacada, updatedAt: updated.updatedAt }
+            : p
+        )
+      );
+      toast.success(
+        next
+          ? `${postulante.code || postulante.id} marcada como destacada`
+          : `Se quitó el destacado de ${postulante.code || postulante.id}`
+      );
+    } catch {
+      toast.error('No se pudo actualizar el destacado');
+    } finally {
+      setDestacandoId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -367,13 +396,27 @@ export default function PostulantesPage() {
                     const reclutador = (p.answers?.['reclutador'] as string) || '';
 
                     return (
-                      <tr key={p.id} className="border-b last:border-0 hover:bg-muted/20">
+                      <tr
+                        key={p.id}
+                        className={cn(
+                          'border-b last:border-0 hover:bg-muted/20',
+                          p.isDestacada && 'bg-violet-50 hover:bg-violet-50/80'
+                        )}
+                      >
                         <td className="p-3 pl-6 font-mono font-medium whitespace-nowrap">
                           <span className="inline-flex items-center gap-2">
                             {p.code}
                             {p.isPrueba && (
                               <Badge variant="outline" className="text-[10px] py-0">
                                 Prueba
+                              </Badge>
+                            )}
+                            {p.isDestacada && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] py-0 bg-violet-100 text-violet-800 border-violet-300"
+                              >
+                                Destacada
                               </Badge>
                             )}
                           </span>
@@ -467,6 +510,22 @@ export default function PostulantesPage() {
                                     <Unlock className="w-4 h-4 mr-2" />
                                   )}
                                   Reabrir cuestionario
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={destacandoId === p.id}
+                                  onClick={() => handleToggleDestacada(p)}
+                                >
+                                  {destacandoId === p.id ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Star
+                                      className={cn(
+                                        'w-4 h-4 mr-2',
+                                        p.isDestacada && 'fill-violet-500 text-violet-500'
+                                      )}
+                                    />
+                                  )}
+                                  {p.isDestacada ? 'Quitar destacado' : 'Destacar'}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-red-600 focus:text-red-600"

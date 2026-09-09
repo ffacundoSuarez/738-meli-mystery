@@ -258,6 +258,8 @@ export interface SurveyResponse {
   accessToken?: string;
   idioma?: Lang;
   isPrueba?: boolean;
+  /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
+  isDestacada?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;
@@ -282,6 +284,8 @@ export interface PendingReviewItem {
   accessToken?: string;
   idioma?: Lang;
   isPrueba?: boolean;
+  /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
+  isDestacada?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;
@@ -324,6 +328,8 @@ export interface PostulanteSummary {
   accessToken?: string;
   idioma?: Lang;
   isPrueba?: boolean;
+  /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
+  isDestacada?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;

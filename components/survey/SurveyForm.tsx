@@ -5,7 +5,8 @@ import Link from 'next/link';
 import {
   surveySections,
   getResumeSectionIndex,
-  getSectionTitle,
+  getFirstCorrectableSectionIndex,
+  hasCorrectableStage,
   getNextReviewableSection,
   getSectionModules,
   isLastVisibleModule,
@@ -225,7 +226,10 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
           setCode(existing.code || '');
           setLang(existing.idioma || 'es');
 
+          const stagesMap = existing.stages || {};
           const reviewIds = getOrderedReviewQuestionIds(flags);
+          const awaitingCorrection = hasCorrectableStage(stagesMap);
+
           if (reviewIds.length > 0) {
             const loc = locateQuestion(reviewIds[0], ans);
             if (loc) {
@@ -237,12 +241,20 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
               setCorrectionMode(true);
               setShowStageGate(false);
             }
+          } else if (awaitingCorrection) {
+            const correctionIdx = getFirstCorrectableSectionIndex(stagesMap);
+            setCurrentSection(correctionIdx ?? getResumeSectionIndex(stagesMap));
+            setShowStageGate(false);
           } else {
-            setCurrentSection(getResumeSectionIndex(existing.stages || {}));
+            setCurrentSection(getResumeSectionIndex(stagesMap));
           }
 
-          // Cerrada manualmente o con las tres partes aprobadas => cartel de gracias
-          if (ans['encuesta-cerrada'] === 'si' || allStagesApproved(existing.stages || {})) {
+          // Cerrada o todas aprobadas => cartel de gracias (salvo correcciones pendientes)
+          if (
+            !awaitingCorrection &&
+            reviewIds.length === 0 &&
+            (ans['encuesta-cerrada'] === 'si' || allStagesApproved(stagesMap))
+          ) {
             setSurveyThankYou(true);
           }
         }
@@ -267,7 +279,8 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     setSectionBaseline(getSectionAnswers(sectionId, answers));
     if (isReviewable) {
       const status = stages[sectionId]?.status;
-      if (correctionMode && hasActiveCorrections) {
+      // a_corregir / rechazada: el shopper edita; no mostrar el gate de "en revisión"
+      if (isCorrectableStage(status) || (correctionMode && hasActiveCorrections)) {
         setShowStageGate(false);
       } else {
         setShowStageGate(
@@ -295,7 +308,14 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
   }, []);
 
   const handleEvidenceUpload = async (questionId: string, files: FileList | null) => {
-    if (isFinalized || surveyThankYou) return;
+    // Bloquear solo si está cerrada de verdad; con correcciones pendientes se permite subir
+    if (
+      (isFinalized || surveyThankYou) &&
+      !hasActiveCorrections &&
+      !isCorrectableStage(currentStageStatus)
+    ) {
+      return;
+    }
     if (!files || files.length === 0) return;
     if (!responseId) {
       toast.error(t('loadError', lang));
@@ -362,7 +382,13 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
   };
 
   const saveCurrentSection = async (advance: boolean, submitReview: boolean) => {
-    if (isFinalized || surveyThankYou) return;
+    if (
+      (isFinalized || surveyThankYou) &&
+      !hasActiveCorrections &&
+      !isCorrectableStage(currentStageStatus)
+    ) {
+      return;
+    }
     setSaving(true);
     try {
       // Última parte reviewable: marcar encuesta cerrada y mostrar agradecimiento
@@ -533,13 +559,15 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
       ];
 
       let updated;
-      for (const secId of sectionIds) {
-        updated = await saveStageByToken(
-          accessToken,
-          secId,
-          getSectionAnswers(secId),
-          true
-        );
+      for (let i = 0; i < sectionIds.length; i++) {
+        const secId = sectionIds[i];
+        const isLast = i === sectionIds.length - 1;
+        // Al reenviar la última parte con correcciones, volver a cerrar la encuesta
+        const sectionAnswers = {
+          ...getSectionAnswers(secId),
+          ...(isLast ? { 'encuesta-cerrada': 'si' as const } : {}),
+        };
+        updated = await saveStageByToken(accessToken, secId, sectionAnswers, true);
       }
 
       if (updated) {
@@ -548,7 +576,8 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         setReviewFlags(updated.reviewFlags || {});
         setCorrectionBaseline({});
         setCorrectionMode(false);
-        setShowStageGate(true);
+        setShowStageGate(false);
+        setSurveyThankYou(true);
         toast.success(t('correctionsSent', lang));
       }
     } catch {
@@ -770,8 +799,16 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
   }
 
   // Priorizar correcciones pendientes sobre pantallas de cierre
-  if (surveyThankYou && !hasActiveCorrections) return renderThankYouScreen();
-  if (isFinalized && !hasActiveCorrections) return renderFinalizedScreen();
+  if (
+    surveyThankYou &&
+    !hasActiveCorrections &&
+    !hasCorrectableStage(stages)
+  ) {
+    return renderThankYouScreen();
+  }
+  if (isFinalized && !hasActiveCorrections && !hasCorrectableStage(stages)) {
+    return renderFinalizedScreen();
+  }
 
   const hideForm =
     showStageGate &&
