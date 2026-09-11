@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mystery Shopper Mercado Libre - Panel de Control",
-  description: "Sistema de gestión de encuestas Mystery Shopper Mercado Libre",
+  title: "Mystery Shopper",
+  description: "Sistema de gestión de encuestas Mystery Shopper",
 };
 
 export default function RootLayout({

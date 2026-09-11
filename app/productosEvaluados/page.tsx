@@ -76,7 +76,7 @@ export default function ProductosEvaluadosPage() {
               <Package className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-semibold text-lg">Mystery Shopper ML</h1>
+              <h1 className="font-semibold text-lg">Mystery Shopper</h1>
               <p className="text-xs text-muted-foreground">Productos ya evaluados</p>
             </div>
           </div>
