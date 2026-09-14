@@ -4,7 +4,11 @@ import {
   locateQuestion,
   surveySections,
 } from '@/lib/survey-config';
-import { COMPETIDOR_QUESTION_ID, interpolate } from '@/lib/format';
+import {
+  COMPETIDOR_QUESTION_ID,
+  interpolate,
+  resolveQuestionHint,
+} from '@/lib/format';
 import { getListingFactsFromAnswers } from '@/lib/survey-config/listing-url';
 import { AnswerValue, EvidenceFile, EvidenceValidation, ProductListingFacts, Question } from '@/lib/types';
 
@@ -94,7 +98,7 @@ export function buildEvidenceVisionContext(
     questionCode: question.codigoOriginal,
     studyStage: studyStageForQuestion(question.id, answers),
     questionText: interpolate(question.text, answers),
-    hint: question.hint ? interpolate(question.hint, answers) : undefined,
+    hint: resolveQuestionHint(question, answers),
     selectedShippingMethod,
     selectedShippingLabel: selectedShippingMethod
       ? SHIPPING_METHOD_LABELS[selectedShippingMethod]
@@ -121,7 +125,7 @@ export async function validateEvidenceFile(
         imageUrl: file.url,
         questionId: question.id,
         questionText: context?.questionText ?? question.text,
-        hint: context?.hint ?? question.hint,
+        hint: context?.hint ?? resolveQuestionHint(question, {}) ?? question.hint,
         marketplace: context?.marketplace,
         country: context?.country,
         questionCode: context?.questionCode ?? question.codigoOriginal,

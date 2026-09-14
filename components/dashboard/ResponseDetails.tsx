@@ -33,8 +33,7 @@ import {
   isEvidence,
   isMatrixAnswer,
   formatQuestionText,
-  pick,
-  interpolate,
+  resolveQuestionHint,
 } from '@/lib/format';
 import {
   getVisibleMatrixRows,
@@ -724,6 +723,11 @@ export function ResponseDetails({
                 : isMarked && canMarkReview
                 ? 'border-l-2 border-l-amber-400 pl-3'
                 : '';
+            const resolvedHint = resolveQuestionHint(
+              question,
+              activeAnswers,
+              lang
+            );
 
             return (
               <div
@@ -734,12 +738,9 @@ export function ResponseDetails({
                   {formatQuestionText(question.text)}
                 </p>
 
-                {question.hint && question.type !== 'info' && (
+                {resolvedHint && question.type !== 'info' && (
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {interpolate(
-                      pick(question.hint, question.hintPt, lang),
-                      activeAnswers
-                    )}
+                    {resolvedHint}
                   </p>
                 )}
 

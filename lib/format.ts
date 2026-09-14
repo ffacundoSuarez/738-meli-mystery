@@ -8,7 +8,7 @@ import {
   isMatrixAnswer,
   isQuestionVisible,
 } from './survey-logic';
-import { AnswerValue, EvidenceFile, Question } from './types';
+import { AnswerValue, EvidenceFile, Lang, Question } from './types';
 
 /** Devuelve el texto de la pregunta tal cual (incluye códigos F1., P17A., C1., etc.) */
 export function formatQuestionText(text: string): string {
@@ -38,6 +38,33 @@ export function interpolate(
       ? getAnswerLabel(COMPETIDOR_QUESTION_ID, raw)
       : '';
   return text.replaceAll('[INSERTAR MARCA]', label || '[INSERTAR MARCA]');
+}
+
+/**
+ * Hint visible: base (hint/hintPt) + línea del marketplace actual (A07).
+ * Si no hay A07 o no hay entrada para ese slug, solo el párrafo común.
+ */
+export function resolveQuestionHint(
+  question: Question,
+  answers: Record<string, AnswerValue>,
+  lang: Lang = 'es'
+): string | undefined {
+  const base = question.hint
+    ? interpolate(pick(question.hint, question.hintPt, lang), answers)
+    : '';
+  const raw = answers[COMPETIDOR_QUESTION_ID];
+  const slug = typeof raw === 'string' ? raw : undefined;
+  const byMarket =
+    slug && question.hintByMarketplace
+      ? question.hintByMarketplace[
+          slug as keyof NonNullable<Question['hintByMarketplace']>
+        ]
+      : undefined;
+  const parts = [base, byMarket].filter(
+    (p): p is string => Boolean(p && p.trim())
+  );
+  if (parts.length === 0) return undefined;
+  return parts.join('\n');
 }
 
 export function findQuestion(questionId: string): Question | undefined {
