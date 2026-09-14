@@ -68,6 +68,13 @@ export interface Question {
   required?: boolean;
   hint?: string;
   hintPt?: string;
+  /**
+   * Aclaración extra según marketplace (A07 / q8-competidor).
+   * Se concatena al hint base solo para el slug activo.
+   */
+  hintByMarketplace?: Partial<
+    Record<'falabella' | 'amazon' | 'temu', string>
+  >;
   showIf?: Condition;
   /** Descalifica toda la encuesta si se cumple (ej. región "Otro") */
   terminateIf?: Condition;

@@ -228,6 +228,14 @@ export const parte3: SurveySection = {
           lockedIf: eq('q8-competidor', 'falabella'),
           lockedValue: '1',
           hint: 'El comprobante fiscal contiene los datos fiscales del vendedor y la descripción del producto comprado. Puede recibirse en formato digital o físico.',
+          // Aclaración operativa: solo la línea del marketplace de la encuesta (A07).
+          hintByMarketplace: {
+            falabella:
+              'FALABELLA: Cargar comprobante fiscal recibido por mail con la compra.',
+            amazon:
+              'AMAZON: Cargar foto del comprobante en papel recibido con el paquete. De no contar con esa info bajar desde la plataforma',
+            temu: 'TEMU: Bajar información desde la plataforma',
+          },
         },
         {
           id: 'q46a-foto-nfe',

@@ -25,7 +25,7 @@ import {
   applyComputedAnswers,
   getAllQuestions,
 } from '@/lib/survey-logic';
-import { formatQuestionText, interpolate, pick } from '@/lib/format';
+import { formatQuestionText, interpolate, pick, resolveQuestionHint } from '@/lib/format';
 import { t } from '@/lib/survey-i18n';
 import { AnswerValue, EvidenceFile, Lang, ListingFacts, Question, ReviewFlagsMap, StageStatus, StagesMap, SurveyModule } from '@/lib/types';
 import { LISTING_FACTS_KEY } from '@/lib/survey-config/listing-url';
@@ -594,6 +594,7 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     const flag = reviewFlags[question.id];
     const reviewNote = flag?.corrected ? undefined : flag?.note;
     const hasReviewFlag = Boolean(reviewNote);
+    const resolvedHint = resolveQuestionHint(question, answers, lang);
 
     return (
       <div
@@ -619,9 +620,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
           </div>
         )}
 
-        {question.hint && question.type !== 'info' && (
+        {resolvedHint && question.type !== 'info' && (
           <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-            {interpolate(pick(question.hint, question.hintPt, lang), answers)}
+            {resolvedHint}
           </p>
         )}
 
