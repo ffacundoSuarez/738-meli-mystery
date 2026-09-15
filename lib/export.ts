@@ -1,13 +1,24 @@
-import { surveySections, getSectionTitle, REVIEWABLE_SECTIONS } from './survey-config';
+import {
+  surveySections,
+  getSectionTitle,
+  getMaxApprovedStage,
+  REVIEWABLE_SECTIONS,
+} from './survey-config';
 import { getAnswerLabel, isEvidence, formatQuestionText } from './format';
 import {
   getAllQuestions,
   getAllQuestionsFromSection,
+  getSectionQuestionIds,
   isClientVisibleQuestion,
   isQuestionVisible,
 } from './survey-logic';
 import { getScreeningSnapshot } from './survey-snapshot';
-import { PublicResult, StageStatus, SurveyResponse } from './types';
+import {
+  PublicResult,
+  StagesMap,
+  StageStatus,
+  SurveyResponse,
+} from './types';
 
 /** Etiquetas de estado por parte para la exportación de Revisión */
 const STAGE_STATUS_EXPORT_LABEL: Record<StageStatus, string> = {
@@ -34,6 +45,25 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+/** ¿La sección está aprobada para export público al cliente? */
+function isApprovedSection(
+  stages: StagesMap | undefined,
+  sectionId: string
+): boolean {
+  return stages?.[sectionId]?.status === 'aprobada';
+}
+
+/** Mapa questionId → sectionId (una sola vez por export). */
+function buildQuestionSectionMap(): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const section of surveySections) {
+    for (const questionId of getSectionQuestionIds(section)) {
+      map.set(questionId, section.id);
+    }
+  }
+  return map;
+}
+
 type ExportRow = SurveyResponse | PublicResult;
 
 type BuildOptions = {
@@ -48,6 +78,8 @@ function buildExportRows(responses: ExportRow[], options: BuildOptions = {}) {
   const questions = getAllQuestions(surveySections).filter(
     (q) => review || isClientVisibleQuestion(q)
   );
+  // Solo en modo cliente: vaciar celdas de etapas no aprobadas
+  const questionSectionMap = review ? null : buildQuestionSectionMap();
 
   const headers = review
     ? [
@@ -82,12 +114,12 @@ function buildExportRows(responses: ExportRow[], options: BuildOptions = {}) {
       r.nombreApellido ||
       [r.nombre, r.apellido].filter(Boolean).join(' ') ||
       '';
+    const stages = 'stages' in r ? r.stages : undefined;
 
     let cells: string[];
 
     if (review) {
       const snapshot = getScreeningSnapshot(r.answers);
-      const stages = 'stages' in r ? r.stages : undefined;
       cells = [
         r.id,
         code || '',
@@ -101,10 +133,11 @@ function buildExportRows(responses: ExportRow[], options: BuildOptions = {}) {
         }),
       ];
     } else {
-      const maxStage =
-        'maxApprovedStage' in r && r.maxApprovedStage
-          ? getSectionTitle(r.maxApprovedStage)
-          : '';
+      // Preferir maxApprovedStage del RPC; si falta (p.ej. toSurveyResponse), derivarlo de stages
+      const maxStageId =
+        ('maxApprovedStage' in r && r.maxApprovedStage) ||
+        (stages ? getMaxApprovedStage(stages) : null);
+      const maxStage = maxStageId ? getSectionTitle(maxStageId) : '';
       cells = [
         r.id,
         code || '',
@@ -116,6 +149,14 @@ function buildExportRows(responses: ExportRow[], options: BuildOptions = {}) {
     }
 
     for (const q of questions) {
+      // Export cliente: no incluir respuestas de etapas aún no aprobadas
+      if (questionSectionMap) {
+        const sectionId = questionSectionMap.get(q.id);
+        if (sectionId && !isApprovedSection(stages, sectionId)) {
+          cells.push('');
+          continue;
+        }
+      }
       if (!isQuestionVisible(q, r.answers)) {
         cells.push('');
         continue;
