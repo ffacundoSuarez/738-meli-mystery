@@ -41,6 +41,7 @@ function parseResponse(raw: Record<string, unknown>): SurveyResponse {
     reviewedBy: raw.reviewedBy as string | undefined,
     isPrueba: Boolean(raw.isPrueba),
     isDestacada: Boolean(raw.isDestacada),
+    isCanceladaPlayer: Boolean(raw.isCanceladaPlayer),
     createdAt: String(raw.createdAt),
     updatedAt: String(raw.updatedAt),
   };
@@ -98,6 +99,7 @@ function parsePostulante(raw: Record<string, unknown>): PostulanteSummary {
     status: raw.status as ResponseStatus | undefined,
     isPrueba: Boolean(raw.isPrueba),
     isDestacada: Boolean(raw.isDestacada),
+    isCanceladaPlayer: Boolean(raw.isCanceladaPlayer),
     createdAt: String(raw.createdAt),
     updatedAt: raw.updatedAt as string | undefined,
   };
@@ -383,6 +385,20 @@ export async function adminSetDestacada(
     p_passcode: requireOpsPasscode(),
     p_response_id: responseId,
     p_destacada: destacada,
+  });
+  if (error) throw error;
+  return parseResponse(data as Record<string, unknown>);
+}
+
+/** Marca o quita la etiqueta Ops “Cancelada por player” */
+export async function adminSetCanceladaPlayer(
+  responseId: string,
+  canceladaPlayer: boolean
+): Promise<SurveyResponse> {
+  const { data, error } = await supabase.rpc('meli_admin_set_cancelada_player', {
+    p_passcode: requireOpsPasscode(),
+    p_response_id: responseId,
+    p_cancelada_player: canceladaPlayer,
   });
   if (error) throw error;
   return parseResponse(data as Record<string, unknown>);
