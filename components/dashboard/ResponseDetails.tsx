@@ -352,10 +352,12 @@ function normalizeAnswersForCompare(
   return applyComputedAnswers(getAllQuestions(surveySections), base);
 }
 
-/** Abre la menor parte pendiente de revisión, o la primera disponible */
+/** Abre la menor parte en revisión, o a corregir, o la primera disponible */
 function getDefaultSectionId(stages: StagesMap, sectionIds: string[]): string {
   const pendingReview = sectionIds.find((id) => stages[id]?.status === 'en_revision');
-  return pendingReview ?? sectionIds[0] ?? 'parte-1';
+  if (pendingReview) return pendingReview;
+  const pendingCorrection = sectionIds.find((id) => stages[id]?.status === 'a_corregir');
+  return pendingCorrection ?? sectionIds[0] ?? 'parte-1';
 }
 
 export function ResponseDetails({
@@ -675,6 +677,10 @@ export function ResponseDetails({
           {questions.map((question) => {
             const storedFlag = response.reviewFlags?.[question.id];
             const wasCorrected = storedFlag?.corrected === true;
+            /** Flag activo enviado al shopper (parte en a_corregir) */
+            const isPendingCorrection = Boolean(
+              storedFlag && !wasCorrected && storedFlag.note?.trim()
+            );
             const isMarked = Boolean(draftFlags[question.id]);
             const note = draftFlags[question.id]?.note || '';
             const isEditing = editingIds.has(question.id);
@@ -717,10 +723,12 @@ export function ResponseDetails({
                 ? crossChecksForQuestion(question.id, crossChecks)
                 : [];
 
+            const showAmberHighlight =
+              isPendingCorrection || (isMarked && canMarkReview);
             const dominantBorder =
               wasCorrected
                 ? 'border-l-2 border-l-green-400 pl-3'
-                : isMarked && canMarkReview
+                : showAmberHighlight
                 ? 'border-l-2 border-l-amber-400 pl-3'
                 : '';
             const resolvedHint = resolveQuestionHint(
@@ -756,14 +764,25 @@ export function ResponseDetails({
                   </div>
                 )}
 
+                {isPendingCorrection && storedFlag?.note && (
+                  <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm space-y-1.5">
+                    <Badge
+                      variant="outline"
+                      className="bg-amber-100 text-amber-900 border-amber-300"
+                    >
+                      Pendiente de corrección
+                    </Badge>
+                    <p className="text-amber-950/90 whitespace-pre-wrap">{storedFlag.note}</p>
+                  </div>
+                )}
+
                 <div
                   className={cn(
                     'rounded-lg border bg-muted/40 overflow-hidden',
                     questionChanged && 'border-blue-300',
                     !questionChanged && wasCorrected && 'border-green-200',
                     !questionChanged &&
-                      isMarked &&
-                      canMarkReview &&
+                      showAmberHighlight &&
                       !wasCorrected &&
                       'border-amber-200'
                   )}
