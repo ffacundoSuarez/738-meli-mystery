@@ -95,6 +95,9 @@ export default function RevisionPage() {
   const [filterPais, setFilterPais] = useState('all');
   const [filterCiudad, setFilterCiudad] = useState('all');
   const [filterTipo, setFilterTipo] = useState<'all' | 'real' | 'prueba'>('all');
+  const [filterCanceladaPlayer, setFilterCanceladaPlayer] = useState<
+    'all' | 'yes' | 'no'
+  >('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
 
@@ -165,6 +168,11 @@ export default function RevisionPage() {
       const matchesTipo =
         filterTipo === 'all' ||
         (filterTipo === 'prueba' ? Boolean(r.isPrueba) : !r.isPrueba);
+      const matchesCancelada =
+        filterCanceladaPlayer === 'all' ||
+        (filterCanceladaPlayer === 'yes'
+          ? Boolean(r.isCanceladaPlayer)
+          : !r.isCanceladaPlayer);
 
       return (
         matchesNombre &&
@@ -174,7 +182,8 @@ export default function RevisionPage() {
         matchesEstado &&
         matchesPais &&
         matchesCiudad &&
-        matchesTipo
+        matchesTipo &&
+        matchesCancelada
       );
     });
   }, [
@@ -187,6 +196,7 @@ export default function RevisionPage() {
     filterPais,
     filterCiudad,
     filterTipo,
+    filterCanceladaPlayer,
   ]);
 
   const filteredPendingStages = useMemo(
@@ -204,6 +214,7 @@ export default function RevisionPage() {
     if (filterPais !== 'all') count += 1;
     if (filterCiudad !== 'all') count += 1;
     if (filterTipo !== 'all') count += 1;
+    if (filterCanceladaPlayer !== 'all') count += 1;
     return count;
   }, [
     filterEmpresa,
@@ -213,6 +224,7 @@ export default function RevisionPage() {
     filterPais,
     filterCiudad,
     filterTipo,
+    filterCanceladaPlayer,
   ]);
 
   const clearFilters = () => {
@@ -223,6 +235,7 @@ export default function RevisionPage() {
     setFilterPais('all');
     setFilterCiudad('all');
     setFilterTipo('all');
+    setFilterCanceladaPlayer('all');
   };
 
   const handleReview = async (
@@ -447,6 +460,11 @@ export default function RevisionPage() {
                             Destacada
                           </Badge>
                         )}
+                        {response.isCanceladaPlayer && (
+                          <Badge className="text-[10px] py-0 bg-red-600 text-white border-red-700 hover:bg-red-600">
+                            Cancelada por player
+                          </Badge>
+                        )}
                       </div>
 
                       <div className="flex flex-wrap gap-1.5">
@@ -544,6 +562,11 @@ export default function RevisionPage() {
                     </>
                   );
                 })()}
+              {selected?.isCanceladaPlayer && (
+                <Badge className="ml-2 align-middle text-[10px] py-0 bg-red-600 text-white border-red-700 hover:bg-red-600">
+                  Cancelada por player
+                </Badge>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -683,6 +706,25 @@ export default function RevisionPage() {
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="real">Reales</SelectItem>
                   <SelectItem value="prueba">Pruebas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Cancelada por player</Label>
+              <Select
+                value={filterCanceladaPlayer}
+                onValueChange={(v) =>
+                  setFilterCanceladaPlayer(v as 'all' | 'yes' | 'no')
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Cancelada por player" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="yes">Solo canceladas</SelectItem>
+                  <SelectItem value="no">Sin etiqueta</SelectItem>
                 </SelectContent>
               </Select>
             </div>

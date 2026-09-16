@@ -118,6 +118,13 @@ export const STAGE_STATUS_COLORS: Record<string, string> = {
   rechazada: 'bg-red-50 text-red-700 border-red-200',
 };
 
+/** Detecta si un archivo de evidencia es imagen (MIME o extensión). */
+function isImageEvidenceFile(file: EvidenceFile): boolean {
+  if (file.type?.startsWith('image/')) return true;
+  const name = file.name || file.url || '';
+  return /\.(jpe?g|png|gif|webp|bmp|svg)(\?|$)/i.test(name);
+}
+
 interface ResponseDetailsProps {
   response: SurveyResponse;
   mode?: ResponseDetailsMode;
@@ -148,72 +155,94 @@ function renderAnswerCell(
       );
     }
     return (
-      <div className="space-y-2">
-        {answer.map((file) => (
-          <div key={file.url} className="space-y-1">
-            <a
-              href={file.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-foreground hover:underline"
-            >
-              <FileText className="w-4 h-4 shrink-0" />
-              <span className="truncate font-bold">{file.name}</span>
-            </a>
-            {showAi && file.validation?.status === 'ok' && (
-              <Badge
-                variant="outline"
-                className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {answer.map((file) => {
+          const isImage = isImageEvidenceFile(file);
+          return (
+            <div key={file.url} className="space-y-1.5 min-w-0">
+              <a
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block group"
               >
-                IA: OK
-              </Badge>
-            )}
-            {showAi && file.validation?.status === 'doubt' && (
-              <Badge
-                variant="outline"
-                className="text-[10px] py-0 h-5 bg-amber-50 text-amber-800 border-amber-200"
-                title={file.validation.reason}
-              >
-                IA: Dudosa
-              </Badge>
-            )}
-            {showAi && file.validation?.status === 'invalid' && (
-              <Badge
-                variant="outline"
-                className="text-[10px] py-0 h-5 bg-red-50 text-red-800 border-red-200"
-                title={file.validation.reason}
-              >
-                IA: Inválida
-              </Badge>
-            )}
-            {showAi &&
-              (file.validation?.status === 'doubt' ||
-                file.validation?.status === 'invalid') &&
-              file.validation.reason && (
-                <p className="text-xs text-muted-foreground">
-                  {file.validation.reason}
-                </p>
-              )}
-            {showAi && file.validation?.facts && (
-              <div className="text-xs text-muted-foreground space-y-0.5 pl-1 border-l-2 border-muted">
-                {file.validation.facts.title && (
-                  <p>Título IA: {file.validation.facts.title}</p>
+                {isImage ? (
+                  <div className="rounded-md border bg-muted/30 overflow-hidden">
+                    {/* Preview inline para scrollear evidencias sin abrir otra pestaña */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={file.url}
+                      alt={file.name}
+                      loading="lazy"
+                      className="max-h-40 w-full object-contain bg-white/50"
+                    />
+                    <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground group-hover:underline border-t">
+                      <FileText className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate font-medium">{file.name}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="flex items-center gap-2 text-foreground group-hover:underline">
+                    <FileText className="w-4 h-4 shrink-0" />
+                    <span className="truncate font-bold">{file.name}</span>
+                  </span>
                 )}
-                {file.validation.facts.price !== undefined && (
-                  <p>
-                    Precio IA: {file.validation.facts.price}
-                    {file.validation.facts.currency
-                      ? ` ${file.validation.facts.currency}`
-                      : ''}
+              </a>
+              {showAi && file.validation?.status === 'ok' && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] py-0 h-5 bg-green-50 text-green-800 border-green-200"
+                >
+                  IA: OK
+                </Badge>
+              )}
+              {showAi && file.validation?.status === 'doubt' && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] py-0 h-5 bg-amber-50 text-amber-800 border-amber-200"
+                  title={file.validation.reason}
+                >
+                  IA: Dudosa
+                </Badge>
+              )}
+              {showAi && file.validation?.status === 'invalid' && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] py-0 h-5 bg-red-50 text-red-800 border-red-200"
+                  title={file.validation.reason}
+                >
+                  IA: Inválida
+                </Badge>
+              )}
+              {showAi &&
+                (file.validation?.status === 'doubt' ||
+                  file.validation?.status === 'invalid') &&
+                file.validation.reason && (
+                  <p className="text-xs text-muted-foreground">
+                    {file.validation.reason}
                   </p>
                 )}
-                {file.validation.facts.soldBy && (
-                  <p>Vendido por IA: {file.validation.facts.soldBy}</p>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+              {showAi && file.validation?.facts && (
+                <div className="text-xs text-muted-foreground space-y-0.5 pl-1 border-l-2 border-muted">
+                  {file.validation.facts.title && (
+                    <p>Título IA: {file.validation.facts.title}</p>
+                  )}
+                  {file.validation.facts.price !== undefined && (
+                    <p>
+                      Precio IA: {file.validation.facts.price}
+                      {file.validation.facts.currency
+                        ? ` ${file.validation.facts.currency}`
+                        : ''}
+                    </p>
+                  )}
+                  {file.validation.facts.soldBy && (
+                    <p>Vendido por IA: {file.validation.facts.soldBy}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }

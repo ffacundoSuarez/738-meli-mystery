@@ -267,6 +267,8 @@ export interface SurveyResponse {
   isPrueba?: boolean;
   /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
   isDestacada?: boolean;
+  /** Compra cancelada por el player (badge Ops en Revisión); no afecta shopper ni resultados */
+  isCanceladaPlayer?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;
@@ -293,6 +295,8 @@ export interface PendingReviewItem {
   isPrueba?: boolean;
   /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
   isDestacada?: boolean;
+  /** Compra cancelada por el player (badge Ops en Revisión) */
+  isCanceladaPlayer?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;
@@ -337,6 +341,8 @@ export interface PostulanteSummary {
   isPrueba?: boolean;
   /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
   isDestacada?: boolean;
+  /** Compra cancelada por el player (badge Ops en Revisión) */
+  isCanceladaPlayer?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;

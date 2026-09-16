@@ -5,6 +5,7 @@ import {
   adminCreatePostulante,
   adminDeletePostulante,
   adminListResponsesSummary,
+  adminSetCanceladaPlayer,
   adminSetDestacada,
   adminUnlockSurvey,
   adminUpdatePostulante,
@@ -40,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Ban,
   Copy,
   Filter,
   Link as LinkIcon,
@@ -79,6 +81,8 @@ export default function PostulantesPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [reopeningId, setReopeningId] = useState<string | null>(null);
   const [destacandoId, setDestacandoId] = useState<string | null>(null);
+  const [canceladaTarget, setCanceladaTarget] = useState<SurveyResponse | null>(null);
+  const [savingCancelada, setSavingCancelada] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPais, setFilterPais] = useState('all');
   const [filterTipo, setFilterTipo] = useState<'all' | 'real' | 'prueba'>('all');
@@ -295,6 +299,37 @@ export default function PostulantesPage() {
     }
   };
 
+  /** Confirma y aplica la etiqueta Ops “Cancelada por player” */
+  const handleConfirmCanceladaPlayer = async () => {
+    if (!canceladaTarget) return;
+    setSavingCancelada(true);
+    const next = !canceladaTarget.isCanceladaPlayer;
+    try {
+      const updated = await adminSetCanceladaPlayer(canceladaTarget.id, next);
+      setPostulantes((prev) =>
+        prev.map((p) =>
+          p.id === updated.id
+            ? {
+                ...p,
+                isCanceladaPlayer: updated.isCanceladaPlayer,
+                updatedAt: updated.updatedAt,
+              }
+            : p
+        )
+      );
+      toast.success(
+        next
+          ? `${canceladaTarget.code || canceladaTarget.id} marcada como cancelada por player`
+          : `Se quitó la etiqueta de ${canceladaTarget.code || canceladaTarget.id}`
+      );
+      setCanceladaTarget(null);
+    } catch {
+      toast.error('No se pudo actualizar la etiqueta');
+    } finally {
+      setSavingCancelada(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -419,6 +454,11 @@ export default function PostulantesPage() {
                                 Destacada
                               </Badge>
                             )}
+                            {p.isCanceladaPlayer && (
+                              <Badge className="text-[10px] py-0 bg-red-600 text-white border-red-700 hover:bg-red-600">
+                                Cancelada por player
+                              </Badge>
+                            )}
                           </span>
                         </td>
                         <td className="p-3">
@@ -526,6 +566,14 @@ export default function PostulantesPage() {
                                     />
                                   )}
                                   {p.isDestacada ? 'Quitar destacado' : 'Destacar'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setCanceladaTarget(p)}
+                                >
+                                  <Ban className="w-4 h-4 mr-2" />
+                                  {p.isCanceladaPlayer
+                                    ? 'Quitar cancelada por player'
+                                    : 'Cancelada por player'}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-red-600 focus:text-red-600"
@@ -710,6 +758,68 @@ export default function PostulantesPage() {
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!canceladaTarget}
+        onOpenChange={(open) => !open && !savingCancelada && setCanceladaTarget(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {canceladaTarget?.isCanceladaPlayer
+                ? 'Quitar etiqueta Cancelada por player'
+                : 'Marcar como Cancelada por player'}
+            </DialogTitle>
+            <DialogDescription>
+              {canceladaTarget?.isCanceladaPlayer ? (
+                <>
+                  ¿Quitarle la etiqueta a{' '}
+                  <strong>
+                    {canceladaTarget.code} ·{' '}
+                    {canceladaTarget.nombreApellido ||
+                      [canceladaTarget.nombre, canceladaTarget.apellido]
+                        .filter(Boolean)
+                        .join(' ') ||
+                      'Sin nombre'}
+                  </strong>
+                  ?
+                </>
+              ) : (
+                <>
+                  ¿Marcar a{' '}
+                  <strong>
+                    {canceladaTarget?.code} ·{' '}
+                    {canceladaTarget?.nombreApellido ||
+                      [canceladaTarget?.nombre, canceladaTarget?.apellido]
+                        .filter(Boolean)
+                        .join(' ') ||
+                      'Sin nombre'}
+                  </strong>{' '}
+                  como compra cancelada por el player? Solo es una etiqueta de Ops; no cambia
+                  las respuestas ni el estado de las etapas.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCanceladaTarget(null)}
+              disabled={savingCancelada}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant={canceladaTarget?.isCanceladaPlayer ? 'outline' : 'destructive'}
+              onClick={handleConfirmCanceladaPlayer}
+              disabled={savingCancelada}
+            >
+              {savingCancelada && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {canceladaTarget?.isCanceladaPlayer ? 'Quitar etiqueta' : 'Confirmar'}
             </Button>
           </DialogFooter>
         </DialogContent>
