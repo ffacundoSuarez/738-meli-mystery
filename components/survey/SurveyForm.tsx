@@ -59,6 +59,7 @@ const STAGE_STATUS_TEXT: Record<StageStatus, Record<Lang, string>> = {
   aprobada: { es: 'aprobada', pt: 'aprovada' },
   a_corregir: { es: 'pendiente de corrección', pt: 'pendente de correção' },
   rechazada: { es: 'rechazada', pt: 'rejeitada' },
+  cancelada_player: { es: 'cancelada por player', pt: 'cancelada pelo player' },
 };
 
 /** Estados en los que la parte vuelve al shopper para que la edite y reenvíe */
@@ -199,7 +200,8 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     isReviewable &&
     (currentStageStatus === 'aprobada' ||
       currentStageStatus === 'en_revision' ||
-      currentStageStatus === 'revisado') &&
+      currentStageStatus === 'revisado' ||
+      currentStageStatus === 'cancelada_player') &&
     !correctionMode;
 
   useEffect(() => {
@@ -284,7 +286,10 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
         setShowStageGate(false);
       } else {
         setShowStageGate(
-          status === 'aprobada' || status === 'en_revision' || status === 'revisado'
+          status === 'aprobada' ||
+            status === 'en_revision' ||
+            status === 'revisado' ||
+            status === 'cancelada_player'
         );
       }
     } else {
@@ -700,6 +705,7 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
       revisado: 'bg-amber-50 text-amber-800 border-amber-200',
       a_corregir: 'bg-orange-50 text-orange-800 border-orange-200',
       rechazada: 'bg-red-50 text-red-800 border-red-200',
+      cancelada_player: 'bg-red-600 text-white border-red-700',
     }[currentStageStatus];
 
     const StatusIcon =
@@ -815,7 +821,8 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
     showStageGate &&
     (currentStageStatus === 'aprobada' ||
       currentStageStatus === 'en_revision' ||
-      currentStageStatus === 'revisado');
+      currentStageStatus === 'revisado' ||
+      currentStageStatus === 'cancelada_player');
   const showBottomNext = !hideForm;
   const isLastModule = isLastVisibleModule(section, currentModuleIndex, answers);
   const progressiveQuestions = currentModule
@@ -883,8 +890,9 @@ export function SurveyForm({ accessToken }: { accessToken: string }) {
                   ? 'bg-amber-400'
                   : stages[s.id]?.status === 'a_corregir'
                   ? 'bg-orange-400'
-                  : stages[s.id]?.status === 'rechazada'
-                  ? 'bg-red-400'
+                  : stages[s.id]?.status === 'rechazada' ||
+                    stages[s.id]?.status === 'cancelada_player'
+                  ? 'bg-red-600'
                   : index < currentSection
                   ? 'bg-primary/50'
                   : 'bg-muted-foreground/30'

@@ -29,6 +29,7 @@ export type DownloadEstado =
   | 'revisado'
   | 'a_corregir'
   | 'rechazada'
+  | 'cancelada_player'
   | 'borrador';
 
 const ESTADO_OPTIONS: { value: DownloadEstado; label: string }[] = [
@@ -37,6 +38,7 @@ const ESTADO_OPTIONS: { value: DownloadEstado; label: string }[] = [
   { value: 'revisado', label: 'Revisados' },
   { value: 'a_corregir', label: 'Pendientes de corrección' },
   { value: 'rechazada', label: 'Rechazadas' },
+  { value: 'cancelada_player', label: 'Canceladas por player' },
   { value: 'borrador', label: 'Borradores / pendientes' },
 ];
 

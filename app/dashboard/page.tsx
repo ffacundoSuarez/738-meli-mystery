@@ -183,6 +183,7 @@ export default function DashboardPage() {
         revisado: number;
         a_corregir: number;
         rechazada: number;
+        cancelada_player: number;
         total: number;
       }
     >();
@@ -196,6 +197,7 @@ export default function DashboardPage() {
           revisado: 0,
           a_corregir: 0,
           rechazada: 0,
+          cancelada_player: 0,
           total: 0,
         });
       }
@@ -215,6 +217,9 @@ export default function DashboardPage() {
           row.total++;
         } else if (st.status === 'rechazada') {
           row.rechazada++;
+          row.total++;
+        } else if (st.status === 'cancelada_player') {
+          row.cancelada_player++;
           row.total++;
         }
       }
@@ -436,6 +441,12 @@ export default function DashboardPage() {
                     name="Rechazada"
                     stackId="a"
                     fill={STAGE_STACK_COLORS.rechazada}
+                  />
+                  <Bar
+                    dataKey="cancelada_player"
+                    name="Cancelada por player"
+                    stackId="a"
+                    fill={STAGE_STACK_COLORS.cancelada_player}
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>

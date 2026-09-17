@@ -131,6 +131,7 @@ export default function EstadisticasPage() {
       let aprobada = 0;
       let a_corregir = 0;
       let rechazada = 0;
+      let cancelada_player = 0;
       for (const r of realResponses) {
         const st = r.stages?.[sectionId]?.status;
         if (st === 'pendiente') pendiente++;
@@ -139,6 +140,7 @@ export default function EstadisticasPage() {
         else if (st === 'aprobada') aprobada++;
         else if (st === 'a_corregir') a_corregir++;
         else if (st === 'rechazada') rechazada++;
+        else if (st === 'cancelada_player') cancelada_player++;
         else pendiente++; // sin stage iniciada cuenta como pendiente
       }
       row.pendiente = pendiente;
@@ -147,6 +149,7 @@ export default function EstadisticasPage() {
       row.aprobada = aprobada;
       row.a_corregir = a_corregir;
       row.rechazada = rechazada;
+      row.cancelada_player = cancelada_player;
       return row;
     });
   }, [realResponses]);
@@ -215,6 +218,7 @@ export default function EstadisticasPage() {
     let approved = 0;
     let toFix = 0;
     let rejected = 0;
+    let canceladaPlayer = 0;
     for (const r of realResponses) {
       for (const st of Object.values(r.stages || {})) {
         if (st.status === 'pendiente') pending++;
@@ -223,9 +227,10 @@ export default function EstadisticasPage() {
         else if (st.status === 'aprobada') approved++;
         else if (st.status === 'a_corregir') toFix++;
         else if (st.status === 'rechazada') rejected++;
+        else if (st.status === 'cancelada_player') canceladaPlayer++;
       }
     }
-    return { pending, inReview, reviewed, approved, toFix, rejected };
+    return { pending, inReview, reviewed, approved, toFix, rejected, canceladaPlayer };
   }, [realResponses]);
 
   /** Aprobadas vs rechazadas por país (etapas, no encuestas). */
@@ -294,6 +299,10 @@ export default function EstadisticasPage() {
           { label: 'Etapas aprobadas', value: stageStats.approved },
           { label: 'Etapas a corregir', value: stageStats.toFix },
           { label: 'Etapas rechazadas', value: stageStats.rejected },
+          {
+            label: 'Canceladas por player',
+            value: stageStats.canceladaPlayer,
+          },
         ].map((m) => (
           <Card key={m.label}>
             <CardHeader className="pb-2">
@@ -382,6 +391,12 @@ export default function EstadisticasPage() {
                     name="Rechazada"
                     stackId="a"
                     fill={STAGE_STACK_COLORS.rechazada}
+                  />
+                  <Bar
+                    dataKey="cancelada_player"
+                    name="Cancelada por player"
+                    stackId="a"
+                    fill={STAGE_STACK_COLORS.cancelada_player}
                   />
                   <Bar
                     dataKey="pendiente"

@@ -18,6 +18,7 @@ export const STAGE_STACK_COLORS = {
   aprobada: '#22c55e',
   a_corregir: '#f97316',
   rechazada: '#ef4444',
+  cancelada_player: '#b91c1c',
 };
 
 /** Colores para series de categoría y canal. */
