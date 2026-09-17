@@ -17,6 +17,7 @@ const STAGE_SHORT: Record<StageStatus, string> = {
   aprobada: 'Aprobada',
   a_corregir: 'A corregir',
   rechazada: 'Rechazada',
+  cancelada_player: 'Cancelada por player',
 };
 
 export interface ScreeningSnapshot {

@@ -159,7 +159,9 @@ export type StageStatus =
   /** Devuelta al shopper con correcciones marcadas (flujo normal) */
   | 'a_corregir'
   /** Descartada por Ops (no es una corrección) */
-  | 'rechazada';
+  | 'rechazada'
+  /** Compra cancelada por el player (marca Ops por etapa) */
+  | 'cancelada_player';
 
 export interface StageInfo {
   status: StageStatus;
@@ -267,8 +269,6 @@ export interface SurveyResponse {
   isPrueba?: boolean;
   /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
   isDestacada?: boolean;
-  /** Compra cancelada por el player (badge Ops en Revisión); no afecta shopper ni resultados */
-  isCanceladaPlayer?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;
@@ -295,8 +295,6 @@ export interface PendingReviewItem {
   isPrueba?: boolean;
   /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
   isDestacada?: boolean;
-  /** Compra cancelada por el player (badge Ops en Revisión) */
-  isCanceladaPlayer?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;
@@ -341,8 +339,6 @@ export interface PostulanteSummary {
   isPrueba?: boolean;
   /** Destacada en listados Ops (color especial); no afecta shopper ni resultados */
   isDestacada?: boolean;
-  /** Compra cancelada por el player (badge Ops en Revisión) */
-  isCanceladaPlayer?: boolean;
   nombre?: string;
   apellido?: string;
   nombreApellido?: string;

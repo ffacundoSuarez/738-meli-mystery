@@ -31,6 +31,7 @@ const STAGE_STATUS_EXPORT_LABEL: Record<StageStatus, string> = {
   aprobada: 'Aprobada',
   a_corregir: 'Pendiente de corrección',
   rechazada: 'Rechazada',
+  cancelada_player: 'Cancelada por player',
 };
 
 /** Celda CSV estándar (delimitador coma). */

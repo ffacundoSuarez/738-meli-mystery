@@ -4,6 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -101,12 +109,14 @@ export const REVISION_STATUS_LABELS: Record<StageStatus, string> = {
   aprobada: 'Aprobada',
   a_corregir: 'Pendiente de corrección',
   rechazada: 'Rechazada',
+  cancelada_player: 'Cancelada por player',
 };
 
 const RESULTS_STATUS_LABELS: Record<string, string> = {
   aprobada: 'Aprobada',
   a_corregir: 'Pendiente de corrección',
   rechazada: 'Rechazada',
+  cancelada_player: 'Cancelada por player',
 };
 
 export const STAGE_STATUS_COLORS: Record<string, string> = {
@@ -116,6 +126,7 @@ export const STAGE_STATUS_COLORS: Record<string, string> = {
   aprobada: 'bg-green-50 text-green-700 border-green-200',
   a_corregir: 'bg-orange-50 text-orange-800 border-orange-300',
   rechazada: 'bg-red-50 text-red-700 border-red-200',
+  cancelada_player: 'bg-red-600 text-white border-red-700',
 };
 
 /** Detecta si un archivo de evidencia es imagen (MIME o extensión). */
@@ -301,7 +312,8 @@ function stageWasSubmitted(status: StageStatus | undefined): boolean {
     status === 'revisado' ||
     status === 'aprobada' ||
     status === 'a_corregir' ||
-    status === 'rechazada'
+    status === 'rechazada' ||
+    status === 'cancelada_player'
   );
 }
 
@@ -404,6 +416,9 @@ export function ResponseDetails({
   unlockLoading = false,
 }: ResponseDetailsProps) {
   const [draftFlags, setDraftFlags] = useState<ReviewFlagsMap>({});
+  const [pendingCanceladaSection, setPendingCanceladaSection] = useState<string | null>(
+    null
+  );
   const [editedAnswers, setEditedAnswers] = useState<Record<string, AnswerValue>>({});
   const [editingIds, setEditingIds] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
@@ -1149,10 +1164,14 @@ export function ResponseDetails({
                   disabled={actionLoading === sectionId}
                   onValueChange={(value) => {
                     if (value === stageStatus) return;
+                    if (value === 'cancelada_player') {
+                      setPendingCanceladaSection(sectionId);
+                      return;
+                    }
                     onSetStageStatus(sectionId, value as StageStatus);
                   }}
                 >
-                  <SelectTrigger className="h-8 w-[160px] text-sm">
+                  <SelectTrigger className="h-8 w-[200px] text-sm">
                     <SelectValue placeholder="Estado" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1161,6 +1180,9 @@ export function ResponseDetails({
                     <SelectItem value="aprobada">Aprobada</SelectItem>
                     <SelectItem value="a_corregir">Pendiente de corrección</SelectItem>
                     <SelectItem value="rechazada">Rechazada</SelectItem>
+                    <SelectItem value="cancelada_player">
+                      Cancelada por player
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -1320,8 +1342,8 @@ export function ResponseDetails({
                     ? 'bg-sky-400 text-sky-950 border-sky-400'
                     : status === 'a_corregir'
                     ? 'bg-orange-400 text-white border-orange-400'
-                    : status === 'rechazada'
-                    ? 'bg-red-400 text-white border-red-400'
+                    : status === 'rechazada' || status === 'cancelada_player'
+                    ? 'bg-red-600 text-white border-red-700'
                     : 'bg-muted text-muted-foreground border-muted-foreground/30'
                 )}
                 title={getSectionTitle(sectionId)}
@@ -1345,6 +1367,53 @@ export function ResponseDetails({
           No hay partes aprobadas o rechazadas para mostrar.
         </p>
       )}
+
+      <Dialog
+        open={!!pendingCanceladaSection}
+        onOpenChange={(open) => !open && setPendingCanceladaSection(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelada por player</DialogTitle>
+            <DialogDescription>
+              ¿Marcar{' '}
+              <strong>
+                {pendingCanceladaSection
+                  ? getSectionTitle(pendingCanceladaSection)
+                  : 'esta parte'}
+              </strong>{' '}
+              como cancelada por el player?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPendingCanceladaSection(null)}
+              disabled={actionLoading === pendingCanceladaSection}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={
+                !pendingCanceladaSection ||
+                actionLoading === pendingCanceladaSection
+              }
+              onClick={() => {
+                if (!pendingCanceladaSection || !onSetStageStatus) return;
+                const sectionId = pendingCanceladaSection;
+                setPendingCanceladaSection(null);
+                void onSetStageStatus(sectionId, 'cancelada_player');
+              }}
+            >
+              {actionLoading === pendingCanceladaSection && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

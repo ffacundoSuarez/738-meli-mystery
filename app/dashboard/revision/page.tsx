@@ -95,9 +95,6 @@ export default function RevisionPage() {
   const [filterPais, setFilterPais] = useState('all');
   const [filterCiudad, setFilterCiudad] = useState('all');
   const [filterTipo, setFilterTipo] = useState<'all' | 'real' | 'prueba'>('all');
-  const [filterCanceladaPlayer, setFilterCanceladaPlayer] = useState<
-    'all' | 'yes' | 'no'
-  >('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
 
@@ -168,11 +165,6 @@ export default function RevisionPage() {
       const matchesTipo =
         filterTipo === 'all' ||
         (filterTipo === 'prueba' ? Boolean(r.isPrueba) : !r.isPrueba);
-      const matchesCancelada =
-        filterCanceladaPlayer === 'all' ||
-        (filterCanceladaPlayer === 'yes'
-          ? Boolean(r.isCanceladaPlayer)
-          : !r.isCanceladaPlayer);
 
       return (
         matchesNombre &&
@@ -182,8 +174,7 @@ export default function RevisionPage() {
         matchesEstado &&
         matchesPais &&
         matchesCiudad &&
-        matchesTipo &&
-        matchesCancelada
+        matchesTipo
       );
     });
   }, [
@@ -196,7 +187,6 @@ export default function RevisionPage() {
     filterPais,
     filterCiudad,
     filterTipo,
-    filterCanceladaPlayer,
   ]);
 
   const filteredPendingStages = useMemo(
@@ -214,7 +204,6 @@ export default function RevisionPage() {
     if (filterPais !== 'all') count += 1;
     if (filterCiudad !== 'all') count += 1;
     if (filterTipo !== 'all') count += 1;
-    if (filterCanceladaPlayer !== 'all') count += 1;
     return count;
   }, [
     filterEmpresa,
@@ -224,7 +213,6 @@ export default function RevisionPage() {
     filterPais,
     filterCiudad,
     filterTipo,
-    filterCanceladaPlayer,
   ]);
 
   const clearFilters = () => {
@@ -235,12 +223,17 @@ export default function RevisionPage() {
     setFilterPais('all');
     setFilterCiudad('all');
     setFilterTipo('all');
-    setFilterCanceladaPlayer('all');
   };
 
   const handleReview = async (
     sectionId: string,
-    action: 'aprobar' | 'rechazar' | 'corregir' | 'en_revision' | 'revisado',
+    action:
+      | 'aprobar'
+      | 'rechazar'
+      | 'corregir'
+      | 'en_revision'
+      | 'revisado'
+      | 'cancelada_player',
     reviewFlags?: import('@/lib/types').ReviewFlagsMap
   ) => {
     if (!selected) return;
@@ -269,7 +262,9 @@ export default function RevisionPage() {
               ? `Etapa "${title}" marcada como revisada`
               : action === 'corregir'
                 ? `Correcciones enviadas en "${title}"`
-                : `Etapa "${title}" marcada como rechazada`;
+                : action === 'cancelada_player'
+                  ? `Etapa "${title}" marcada como cancelada por player`
+                  : `Etapa "${title}" marcada como rechazada`;
       toast.success(toastMsg);
     } catch {
       toast.error('No se pudo procesar la revisión');
@@ -291,7 +286,9 @@ export default function RevisionPage() {
               ? 'en_revision'
               : status === 'revisado'
                 ? 'revisado'
-                : null;
+                : status === 'cancelada_player'
+                  ? 'cancelada_player'
+                  : null;
     if (!action) return;
     await handleReview(sectionId, action);
   };
@@ -460,11 +457,6 @@ export default function RevisionPage() {
                             Destacada
                           </Badge>
                         )}
-                        {response.isCanceladaPlayer && (
-                          <Badge className="text-[10px] py-0 bg-red-600 text-white border-red-700 hover:bg-red-600">
-                            Cancelada por player
-                          </Badge>
-                        )}
                       </div>
 
                       <div className="flex flex-wrap gap-1.5">
@@ -562,11 +554,6 @@ export default function RevisionPage() {
                     </>
                   );
                 })()}
-              {selected?.isCanceladaPlayer && (
-                <Badge className="ml-2 align-middle text-[10px] py-0 bg-red-600 text-white border-red-700 hover:bg-red-600">
-                  Cancelada por player
-                </Badge>
-              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -652,6 +639,7 @@ export default function RevisionPage() {
                   <SelectItem value="aprobada">Aprobada</SelectItem>
                   <SelectItem value="a_corregir">Pendiente de corrección</SelectItem>
                   <SelectItem value="rechazada">Rechazada</SelectItem>
+                  <SelectItem value="cancelada_player">Cancelada por player</SelectItem>
                   <SelectItem value="pendiente">Pendiente</SelectItem>
                 </SelectContent>
               </Select>
@@ -706,25 +694,6 @@ export default function RevisionPage() {
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="real">Reales</SelectItem>
                   <SelectItem value="prueba">Pruebas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Cancelada por player</Label>
-              <Select
-                value={filterCanceladaPlayer}
-                onValueChange={(v) =>
-                  setFilterCanceladaPlayer(v as 'all' | 'yes' | 'no')
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Cancelada por player" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="yes">Solo canceladas</SelectItem>
-                  <SelectItem value="no">Sin etiqueta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
