@@ -636,11 +636,16 @@ export function ResponseDetails({
     setEditingIds(new Set());
   };
 
+  /** Marca/desmarca a revisar. Al remarcar, crea flag limpia (sin corrected) y precarga la nota previa. */
   const toggleQuestionFlag = (questionId: string, sectionId: string, checked: boolean) => {
     setDraftFlags((prev) => {
       const next = { ...prev };
       if (checked) {
-        next[questionId] = { note: prev[questionId]?.note || '', sectionId };
+        const priorNote =
+          prev[questionId]?.note ||
+          response.reviewFlags?.[questionId]?.note ||
+          '';
+        next[questionId] = { note: priorNote, sectionId };
       } else {
         delete next[questionId];
       }
@@ -648,6 +653,7 @@ export function ResponseDetails({
     });
   };
 
+  /** Actualiza la observación; siempre escribe flag pendiente (sin corrected/correctedAt). */
   const updateQuestionNote = (questionId: string, sectionId: string, note: string) => {
     setDraftFlags((prev) => ({
       ...prev,
@@ -659,7 +665,8 @@ export function ResponseDetails({
     const result: ReviewFlagsMap = {};
     for (const [qId, flag] of Object.entries(draftFlags)) {
       if (flag.sectionId === sectionId && flag.note.trim()) {
-        result[qId] = flag;
+        // Solo note + sectionId: nunca reenviar corrected del historial
+        result[qId] = { note: flag.note, sectionId: flag.sectionId };
       }
     }
     return result;
@@ -730,6 +737,8 @@ export function ResponseDetails({
             const isEditing = editingIds.has(question.id);
             const questionChanged = question.id in answersDiff;
             const showEditControls = canEdit && question.type !== 'info';
+            /** Historial verde solo si no se está remarcando de nuevo */
+            const showCorrectedHistory = wasCorrected && !isMarked;
             const postalCheck =
               question.id === 'q9-codigo-postal'
                 ? checkPostalCode(
@@ -769,11 +778,11 @@ export function ResponseDetails({
 
             const showAmberHighlight =
               isPendingCorrection || (isMarked && canMarkReview);
-            const dominantBorder =
-              wasCorrected
+            // Remarcar (ámbar) gana sobre historial “ya corregida” (verde)
+            const dominantBorder = showAmberHighlight
+              ? 'border-l-2 border-l-amber-400 pl-3'
+              : showCorrectedHistory
                 ? 'border-l-2 border-l-green-400 pl-3'
-                : showAmberHighlight
-                ? 'border-l-2 border-l-amber-400 pl-3'
                 : '';
             const resolvedHint = resolveQuestionHint(
               question,
@@ -796,7 +805,7 @@ export function ResponseDetails({
                   </p>
                 )}
 
-                {wasCorrected && storedFlag?.note && (
+                {showCorrectedHistory && storedFlag?.note && (
                   <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm space-y-1.5">
                     <Badge
                       variant="outline"
@@ -824,11 +833,11 @@ export function ResponseDetails({
                   className={cn(
                     'rounded-lg border bg-muted/40 overflow-hidden',
                     questionChanged && 'border-blue-300',
-                    !questionChanged && wasCorrected && 'border-green-200',
+                    !questionChanged && showAmberHighlight && 'border-amber-200',
                     !questionChanged &&
-                      showAmberHighlight &&
-                      !wasCorrected &&
-                      'border-amber-200'
+                      !showAmberHighlight &&
+                      showCorrectedHistory &&
+                      'border-green-200'
                   )}
                 >
                   <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
@@ -1026,7 +1035,7 @@ export function ResponseDetails({
                   </div>
                 </div>
 
-                {canMarkReview && !wasCorrected && !isEditing && (
+                {canMarkReview && !isEditing && (
                   <div className="space-y-2 pt-1">
                     <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
                       <Checkbox
