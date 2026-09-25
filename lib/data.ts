@@ -159,16 +159,19 @@ export async function getProductosEvaluados(): Promise<ProductoEvaluado[]> {
 
 // --- Vista pública --------------------------------------------------------
 
+/** Mapea un único resultado público (lista o detalle) al modelo de la app. */
+export function mapPublicResultFromRpc(raw: unknown): PublicResult {
+  const questions = getAllQuestions(surveySections);
+  const result = parsePublicResult(raw as Record<string, unknown>);
+  return {
+    ...result,
+    answers: stripInternalAnswers(result.answers, questions),
+  };
+}
+
 /** Mapea el JSON del RPC meli_get_public_results al modelo de la app. */
 export function mapPublicResultsFromRpc(data: unknown): PublicResult[] {
-  const questions = getAllQuestions(surveySections);
-  return ((data as Record<string, unknown>[]) || []).map((raw) => {
-    const result = parsePublicResult(raw);
-    return {
-      ...result,
-      answers: stripInternalAnswers(result.answers, questions),
-    };
-  });
+  return ((data as Record<string, unknown>[]) || []).map(mapPublicResultFromRpc);
 }
 
 /** Error de auth al cargar /resultados (redirect según code). */
@@ -226,6 +229,62 @@ export async function getResultados(): Promise<ResultadosLoadResult> {
   }
   if (res.status === 401) {
     throw new ResultadosAuthError('Sesión expirada. Volvé a ingresar.', 'client_session');
+  }
+
+  throw new ResultadosAuthError('Sesión expirada. Volvé a ingresar.', 'client_session');
+}
+
+/**
+ * Detalle de una encuesta publicada (answers completos).
+ * Misma auth que getResultados: Ops passcode, cliente, o cookie via BFF.
+ */
+export async function getResultadoDetail(
+  responseId: string
+): Promise<PublicResult> {
+  const opsPasscode = getOpsPasscode();
+  if (opsPasscode) {
+    const { data, error } = await supabase.rpc('meli_get_public_result_ops', {
+      p_passcode: opsPasscode,
+      p_response_id: responseId,
+    });
+    if (error) {
+      if (error.message?.includes('Passcode inválido')) {
+        throw new ResultadosAuthError('Passcode inválido', 'passcode_invalid');
+      }
+      throw error;
+    }
+    if (!data) {
+      throw new Error('Resultado no encontrado');
+    }
+    return mapPublicResultFromRpc(data);
+  }
+
+  const clientCreds = getResultadosCredentials();
+  if (clientCreds) {
+    const { data, error } = await supabase.rpc('meli_get_public_result_client', {
+      p_username: clientCreds.username,
+      p_password: clientCreds.password,
+      p_response_id: responseId,
+    });
+    if (error) throw error;
+    if (!data) {
+      throw new Error('Resultado no encontrado');
+    }
+    return mapPublicResultFromRpc(data);
+  }
+
+  const res = await fetch(
+    `/api/resultados/ops?id=${encodeURIComponent(responseId)}`
+  );
+  if (res.ok) {
+    const raw = await res.json();
+    return mapPublicResultFromRpc(raw);
+  }
+  if (res.status === 401) {
+    throw new ResultadosAuthError('Sesión expirada. Volvé a ingresar.', 'client_session');
+  }
+  if (res.status === 404) {
+    throw new Error('Resultado no encontrado');
   }
 
   throw new ResultadosAuthError('Sesión expirada. Volvé a ingresar.', 'client_session');
