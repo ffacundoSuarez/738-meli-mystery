@@ -1023,7 +1023,12 @@ export function ResponseDetails({
                         onRemoveEvidence={removeEvidence}
                       />
                     ) : (
-                      <div className="text-sm font-medium">
+                      <div
+                        className={cn(
+                          'text-sm font-medium',
+                          question.type === 'longtext' && 'whitespace-pre-wrap'
+                        )}
+                      >
                         {renderAnswerCell(
                           question,
                           activeAnswers[question.id],
