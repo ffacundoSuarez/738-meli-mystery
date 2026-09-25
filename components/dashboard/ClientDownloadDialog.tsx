@@ -18,6 +18,7 @@ import {
   exportResponsesToExcel,
   exportResponsesToPdf,
 } from '@/lib/export';
+import { getResultadoDetail } from '@/lib/data';
 import { CIUDADES, PAISES } from '@/lib/survey-config/constants';
 import { evaluateCondition } from '@/lib/survey-logic';
 import { getScreeningSnapshot } from '@/lib/survey-snapshot';
@@ -170,7 +171,9 @@ export function ClientDownloadDialog({
         return;
       }
 
-      const exportRows = rows.map(toSurveyResponse);
+      // Listado solo trae claves de filtro; export necesita answers completos
+      const fullRows = await Promise.all(rows.map((r) => getResultadoDetail(r.id)));
+      const exportRows = fullRows.map(toSurveyResponse);
       const stamp = new Date().toISOString().slice(0, 10);
       if (format === 'excel') {
         await exportResponsesToExcel(exportRows, `meli-resultados-${stamp}.xlsx`);

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { ResponseDetails } from '@/components/dashboard/ResponseDetails';
 import { ClientDownloadDialog } from '@/components/dashboard/ClientDownloadDialog';
-import { getResultados, ResultadosAuthError } from '@/lib/data';
+import { getResultados, getResultadoDetail, ResultadosAuthError } from '@/lib/data';
 import { clearResultadosCredentials } from '@/lib/resultados-auth';
 import { getSectionTitle } from '@/lib/survey-config';
 import { CIUDADES } from '@/lib/survey-config/constants';
@@ -71,6 +71,7 @@ export default function ResultadosPage() {
   const [filterCiudad, setFilterCiudad] = useState('all');
   const [selected, setSelected] = useState<PublicResult | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoadingId, setDetailsLoadingId] = useState<string | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
 
   useEffect(() => {
@@ -94,6 +95,28 @@ export default function ResultadosPage() {
       }
     })();
   }, [router]);
+
+  /** Abre el detalle cargando answers completos (como Revisión). */
+  const openDetails = async (row: PublicResult) => {
+    setDetailsLoadingId(row.id);
+    try {
+      const full = await getResultadoDetail(row.id);
+      setSelected(full);
+      setDetailsOpen(true);
+    } catch (err) {
+      if (err instanceof ResultadosAuthError) {
+        if (err.code === 'passcode_invalid') {
+          router.replace('/acceso?redirect=/resultados');
+          return;
+        }
+        router.replace('/resultados/acceso?redirect=/resultados');
+        return;
+      }
+      toast.error('Error al cargar los detalles');
+    } finally {
+      setDetailsLoadingId(null);
+    }
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -365,12 +388,14 @@ export default function ResultadosPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              setSelected(r);
-                              setDetailsOpen(true);
-                            }}
+                            disabled={detailsLoadingId === r.id}
+                            onClick={() => openDetails(r)}
                           >
-                            <Eye className="w-4 h-4 mr-1" />
+                            {detailsLoadingId === r.id ? (
+                              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            ) : (
+                              <Eye className="w-4 h-4 mr-1" />
+                            )}
                             Ver
                           </Button>
                         </td>
