@@ -1,14 +1,33 @@
-import { SurveySection } from '../types';
+import { Question, SurveySection } from '../types';
 import {
   ENTREGA_TIEMPO,
   MONEDAS,
   SI_NO_COD,
   SI_NO_NA,
+  and,
   eq,
   evidenciasModule,
   neq,
 } from './constants';
 import { usdFrom, totalsMatchLabel, naturalDaysBetween } from './computed';
+
+/** E01 = Sí. F01 en adelante solo aplica si la compra fue entregada. */
+const compraEntregada = eq('q-cn-entregada', '1');
+
+/**
+ * Oculta las preguntas del módulo ENTREGA salvo que E01 sea Sí.
+ * Si una pregunta ya tiene showIf, lo combina con AND.
+ * Recibe Question[] para que cada literal se chequee contra Question
+ * y `type` no se ensanche a string en el .map.
+ */
+function onlyIfDelivered(questions: Question[]): Question[] {
+  return questions.map((question) => ({
+    ...question,
+    showIf: question.showIf
+      ? and(compraEntregada, question.showIf)
+      : compraEntregada,
+  }));
+}
 
 // Parte 3 — cuestionario 03.08 (E + F). IDs internos estables.
 // Desviación de fecha eliminada (no figura desde Word 31.07).
@@ -69,7 +88,9 @@ export const parte3: SurveySection = {
     {
       id: 'entrega',
       title: 'ENTREGA',
-      questions: [
+      // Quien responde No en E01 no ve F01 en adelante (incluye C06/C07 de esta pantalla).
+      showIf: compraEntregada,
+      questions: onlyIfDelivered([
         {
           id: 'q32-fecha-recepcion',
           codigoOriginal: 'F01',
@@ -329,7 +350,7 @@ Medellin, CO`,
           hintPt:
             'Controlo interno: captura do mapa GPS ou do tracking minuto a minuto. Não é mostrado ao cliente nos resultados.',
         },
-      ],
+      ]),
     },
     evidenciasModule(3),
   ],
