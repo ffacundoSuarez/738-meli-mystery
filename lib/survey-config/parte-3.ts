@@ -15,16 +15,18 @@ import { usdFrom, totalsMatchLabel, naturalDaysBetween } from './computed';
 const compraEntregada = eq('q-cn-entregada', '1');
 
 /**
- * Oculta una pregunta del módulo ENTREGA salvo que E01 sea Sí.
- * Si la pregunta ya tiene showIf, lo combina con AND.
+ * Oculta las preguntas del módulo ENTREGA salvo que E01 sea Sí.
+ * Si una pregunta ya tiene showIf, lo combina con AND.
+ * Recibe Question[] para que cada literal se chequee contra Question
+ * y `type` no se ensanche a string en el .map.
  */
-function onlyIfDelivered<T extends Question>(question: T): T {
-  return {
+function onlyIfDelivered(questions: Question[]): Question[] {
+  return questions.map((question) => ({
     ...question,
     showIf: question.showIf
       ? and(compraEntregada, question.showIf)
       : compraEntregada,
-  };
+  }));
 }
 
 // Parte 3 — cuestionario 03.08 (E + F). IDs internos estables.
@@ -88,7 +90,7 @@ export const parte3: SurveySection = {
       title: 'ENTREGA',
       // Quien responde No en E01 no ve F01 en adelante (incluye C06/C07 de esta pantalla).
       showIf: compraEntregada,
-      questions: [
+      questions: onlyIfDelivered([
         {
           id: 'q32-fecha-recepcion',
           codigoOriginal: 'F01',
@@ -348,7 +350,7 @@ Medellin, CO`,
           hintPt:
             'Controlo interno: captura do mapa GPS ou do tracking minuto a minuto. Não é mostrado ao cliente nos resultados.',
         },
-      ].map(onlyIfDelivered),
+      ]),
     },
     evidenciasModule(3),
   ],
